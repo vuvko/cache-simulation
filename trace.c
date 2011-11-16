@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 #include <errno.h>
 #include "trace.h"
 
@@ -60,25 +61,24 @@ trace_error(Trace *t, const char *text)
 int
 trace_next(Trace *t)
 {
-    int offset, size;
+    int offset, size, len;
     long long value;
     int validsize[] = {1, 2, 4, 8};
     char *p, *str, op, mem;
     while((str = getline2(t->f)) != NULL) {
-        fprintf(stderr, "%s\n+++\n", str);
         t->lineno++;
         p = strrchr(str, '#');
         if (p != NULL) {
             *p = '\0';
         }
         p = str;
-        fprintf(stderr, "%s\n---\n", p);
-        for (; isspace(*p); p++) {fprintf(stderr, "@\n");}
-        fprintf(stderr, "%s\n---\n", p);
-        if (*p == '\0' || *p == '\n') {
+        len = strlen(p);
+        for (; isspace(p[len - 1]) && len > 0; len--) {}
+        if (len <= 0) {
             continue;
         }
-        sscanf(p, "%c%c%n", &op, &mem, &offset);
+        p[len] = '\0';
+        sscanf(p, " %c%c%n", &op, &mem, &offset);
         if (op != 'R' && op != 'W') {
             fprintf(stderr, "'%c' - %d\n", op, op);
             trace_error(t, "invalid operation type");
@@ -110,7 +110,7 @@ trace_next(Trace *t)
             }
             p = endp;
             value = strtoll(p, &endp, 10);
-            if (errno) {
+            if (errno || *endp != '\0') {
                 trace_error(t, "invalid value");
                 goto fail;
             }

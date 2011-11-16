@@ -22,6 +22,6 @@ char *getline2(FILE *fin);
 int inarrayd(int value, int *array, int size);
 void error_open(char *func, const char *file);
 void error_undefined(char *func, char *param);
-void error_invalid_chr(char *func, int line, char chr);
+void error_invalid_chr(char *func, const char *file, int line, char chr);
 void error_invalid(char *func, char *value);
 #endif

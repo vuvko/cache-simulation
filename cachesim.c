@@ -17,7 +17,7 @@ main(int argc, char *argv[])
         return 1;
     }
     TraceStep *st = trace_get(t);
-    fprintf(stderr, "%d\n", st->size);
+    fprintf(stderr, "%d %x\n", st->size, st->addr);
     
     return 0;
 }

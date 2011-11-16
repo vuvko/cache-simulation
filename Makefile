@@ -1,9 +1,9 @@
 CC = gcc
 CFLAGS = -Wall -O2
 LDFLAGS = -s
-#CFILES = parsecfg.c common.c trace.c cachesim.c
+#CFILES = parsecfg.c common.c trace.c random.c cachesim.c
 CFILES = cachesim.c trace.c common.c
-#HFILES = parsecfg.h commonn.h trace.h
+#HFILES = parsecfg.h commonn.h trace.h random.h
 HFILES = trace.h common.h
 OBJECTS = $(CFILES:.c=.o)
 TARGET = parse

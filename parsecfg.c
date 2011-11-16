@@ -5,6 +5,7 @@
 #include <errno.h>
 
 #include "parsecfg.h"
+#include "common.h"
 
 typedef struct ConfigEntry
 {
@@ -88,7 +89,7 @@ config_read(const char *path)
             for (; isspace(*v); v++){}
             if (*v != '=') {
                 //fprintf(stderr, "Error while parsing config file3\n");
-                error_undefined(func_name, path, line, k);
+                error_undefined(func_name, k);
                 goto fail;
             }
         } else {
@@ -98,7 +99,7 @@ config_read(const char *path)
         for (; isspace(*v); v++){}
         if (*v == '\0') {
             //fprintf(stderr, "Error while parsing config file4\n");
-            error_undefined(func_name, path, line, k);
+            error_undefined(func_name, k);
             goto fail;
         }
         char *cur = v;

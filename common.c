@@ -47,22 +47,22 @@ error_open(char *func, const char *file)
 }
 
 void
-error_undefined(char *func, char *file, int line, char *param)
+error_undefined(char *func, char *param)
 {
-    fprintf(stderr, "%s, %s: on line %d - undefined \
-    configuration parameter '%s'\n", func, file, line, param);
+    fprintf(stderr, "%s: undefined \
+    configuration parameter '%s'\n", func, param);
 }
 
 void
-error_invalid(char *func, char *file, int line, char *value)
+error_invalid(char *func, char *value)
 {
-    fprintf(stderr, "%s, %s: on line %d - invalid \
-    configuration value '%s'\n", func, file, line, value);
+    fprintf(stderr, "%s: invalid \
+    configuration value '%s'\n", func, value);
 }
 
 void
-error_invalid_chr(char *func, char *file, int line, char chr)
+error_invalid_chr(char *func, const char *file, int line, char chr)
 {
-    fprintf(stderr, "%s, %s:on line %d - invalid \
+    fprintf(stderr, "%s: %s:on line %d - invalid \
     character '%c'\n", func, file, line, chr);
 }

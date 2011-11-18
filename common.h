@@ -15,7 +15,10 @@ enum
 {
     MIN_STR_SIZE = 64,
     BYTE = 255,
-    BYTE_SIZE = 8
+    BYTE_SIZE = 8,
+    KiB = 1024,
+    MiB = 1024 * 1024,
+    GiB = 1024 * 1024 * 1024
 };
 
 char *getline2(FILE *fin);

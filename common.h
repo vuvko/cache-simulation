@@ -20,8 +20,9 @@ enum
 
 char *getline2(FILE *fin);
 int inarrayd(int value, int *array, int size);
+char *make_param_name(char *buf, int size, const char *prefix, const char *name);
 void error_open(char *func, const char *file);
-void error_undefined(char *func, char *param);
+void error_undefined(const char *func, const char *param);
 void error_invalid_chr(char *func, const char *file, int line, char chr);
-void error_invalid(char *func, char *value);
+void error_invalid(const char *func, const char *param);
 #endif

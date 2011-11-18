@@ -1,7 +1,7 @@
 #ifndef __STATISTICS_H__
 #define __STATISTICS_H__
 
-#include "parse_config.h"
+#include "parsecfg.h"
 
 #include <stdio.h>
 

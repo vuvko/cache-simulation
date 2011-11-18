@@ -40,24 +40,33 @@ inarrayd(int value, int *array, int size)
     return 0;
 }
 
+char *
+make_param_name(char *buf, int size, const char *prefix, const char *name)
+{
+    if (!prefix) prefix = "";
+    snprintf(buf, size, "%s%s", prefix, name);
+    return buf;
+}
+
 void
 error_open(char *func, const char *file)
 {
     fprintf(stderr, "%s: Cannot open file %s\n", func, file);
+    exit(1);
 }
 
 void
-error_undefined(char *func, char *param)
+error_undefined(const char *func, const char *param)
 {
-    fprintf(stderr, "%s: undefined \
-    configuration parameter '%s'\n", func, param);
+    fprintf(stderr, "%s: configuration parameter '%s' is undefined\n", func, param);
+    exit(1);
 }
 
 void
-error_invalid(char *func, char *value)
+error_invalid(const char *func, const char *param)
 {
-    fprintf(stderr, "%s: invalid \
-    configuration value '%s'\n", func, value);
+    fprintf(stderr, "%s: configuration parameter '%s' value is invalid\n", func, param);
+    exit(1);
 }
 
 void
@@ -65,4 +74,5 @@ error_invalid_chr(char *func, const char *file, int line, char chr)
 {
     fprintf(stderr, "%s: %s:on line %d - invalid \
     character '%c'\n", func, file, line, chr);
+    exit(1);
 }

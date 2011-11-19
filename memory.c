@@ -87,25 +87,33 @@ memory_create(ConfigFile *cfg, const char *var_prefix, StatisticsInfo *info)
     m->b.ops = &memory_ops;
     m->b.info = info;
 
-    r = config_get_int(cfg, make_param_name(buf, sizeof(buf), var_prefix, "memory_size"), &m->memory_size);
+    r = config_get_int(cfg, make_param_name(buf, sizeof(buf), 
+                       var_prefix, "memory_size"), &m->memory_size);
     if (!r) {
         error_undefined("memory_create", buf);
-    } else if (r < 0 || m->memory_size <= 0 || m->memory_size > MAX_MEM_SIZE || m->memory_size % KiB != 0) {
+    } else if (r < 0 || m->memory_size <= 0 || 
+               m->memory_size > MAX_MEM_SIZE || 
+            m->memory_size % KiB != 0) {
         error_invalid("memory_create", buf);
     }
-    r = config_get_int(cfg, make_param_name(buf, sizeof(buf), var_prefix, "memory_read_time"), &m->memory_size);
+    r = config_get_int(cfg, make_param_name(buf, sizeof(buf), 
+                       var_prefix, "memory_read_time"), &m->memory_size);
     if (!r) {
         error_undefined("memory_create", buf);
-    } else if (r < 0 || m->memory_size <= 0 || m->memory_size > MAX_READ_TIME) {
+    } else if (r < 0 || m->memory_size <= 0 || 
+               m->memory_size > MAX_READ_TIME) {
         error_invalid("memory_create", buf);
     }
-    r = config_get_int(cfg, make_param_name(buf, sizeof(buf), var_prefix, "memory_write_time"), &m->memory_size);
+    r = config_get_int(cfg, make_param_name(buf, sizeof(buf), 
+                       var_prefix, "memory_write_time"), &m->memory_size);
     if (!r) {
         error_undefined("memory_create", buf);
-    } else if (r < 0 || m->memory_size <= 0 || m->memory_size > MAX_WRITE_TIME) {
+    } else if (r < 0 || m->memory_size <= 0 || 
+               m->memory_size > MAX_WRITE_TIME) {
         error_invalid("memory_create", buf);
     }
-    r = config_get_int(cfg, make_param_name(buf, sizeof(buf), var_prefix, "memory_width"), &m->memory_size);
+    r = config_get_int(cfg, make_param_name(buf, sizeof(buf), 
+                       var_prefix, "memory_width"), &m->memory_size);
     if (!r) {
         error_undefined("memory_create", buf);
     } else if (r < 0 || m->memory_size <= 0 || m->memory_size > MAX_WIDTH) {

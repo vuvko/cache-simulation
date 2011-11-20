@@ -124,13 +124,14 @@ direct_cache_reveal(AbstractMemory *m, memaddr_t addr, int size, const MemoryCel
 static void
 direct_cache_wt_finalize(DirectCache *c, DirectCacheBlock *b)
 {
-    // FIXME: реализовать до конца
+    // ничего не делаем...
 }
 
 static void
 direct_cache_wb_finalize(DirectCache *c, DirectCacheBlock *b)
 {
-    // FIXME: реализовать до конца
+    // записываем грязный блок в память...
+    c->mem->ops->write(c->mem, b->addr, c->block_size, b->mem);
 }
 
 static AbstractMemoryOps direct_cache_wt_ops =

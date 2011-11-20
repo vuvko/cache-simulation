@@ -1,12 +1,10 @@
 CC = gcc
 CFLAGS = -Wall -O2
 LDFLAGS = -s
-#CFILES = parsecfg.c common.c trace.c random.c cachesim.c
-CFILES = cachesim.c trace.c common.c
-#HFILES = parsecfg.h commonn.h trace.h random.h
-HFILES = trace.h common.h
+CFILES = cachesim.c trace.c common.c parsecfg.c statistics.c direct_cache.c memory.c random.c
+HFILES = trace.h common.h parsecfg.h statistics.h direct_cache.h memory.h random.h
 OBJECTS = $(CFILES:.c=.o)
-TARGET = parse
+TARGET = cachesim
 
 all: $(TARGET)
 $(TARGET): $(OBJECTS)

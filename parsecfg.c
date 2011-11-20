@@ -69,6 +69,7 @@ config_read(const char *path)
         k = str;
         for (; isspace(*k); k++) {}
         if (*k == '\0' || *k == '\n') {
+            free(str);
             continue;
         }
         v = k;
@@ -88,8 +89,8 @@ config_read(const char *path)
             v++;
             for (; isspace(*v); v++){}
             if (*v != '=') {
-                //fprintf(stderr, "Error while parsing config file3\n");
-                error_undefined(func_name, k);
+                fprintf(stderr, "Error while parsing config file3\n");
+                //error_undefined(func_name, k);
                 goto fail;
             }
         } else {
@@ -98,8 +99,8 @@ config_read(const char *path)
         v++;
         for (; isspace(*v); v++){}
         if (*v == '\0') {
-            //fprintf(stderr, "Error while parsing config file4\n");
-            error_undefined(func_name, k);
+            fprintf(stderr, "Error while parsing config file4\n");
+            //error_undefined(func_name, k);
             goto fail;
         }
         char *cur = v;
@@ -138,7 +139,7 @@ config_get(ConfigFile *config, const char *name)
     if (!name || !config) {
         return NULL;
     }
-    int left = 0, right = config->used, med;
+    int left = 0, right = config->used - 1, med;
     while (left <= right) {
         med = (right + left) / 2;
         int fl = strcmp(config->v[med].name, name);

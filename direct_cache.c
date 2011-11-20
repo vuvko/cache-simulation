@@ -189,6 +189,7 @@ direct_cache_create(ConfigFile *cfg,
     char buf[1024];
     DirectCache *c = (DirectCache*) calloc(1, sizeof(*c));
     c->b.info = info;
+    c->b.info->hit_counter_needed = 1;
     const char *strategy = config_get(cfg, make_param_name(buf, 
                            sizeof(buf), var_prefix, "write_strategy"));
     if (!strategy) {
@@ -199,6 +200,7 @@ direct_cache_create(ConfigFile *cfg,
     } else if (!strcmp(strategy, "write-back")) {
         c->b.ops = &direct_cache_wb_ops;
         c->direct_ops.finalize = direct_cache_wb_finalize;
+        c->b.info->write_back_needed = 1;
     } else {
         error_invalid("direct_cache_create", buf);
     }

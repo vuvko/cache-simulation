@@ -5,7 +5,6 @@
 void
 statistics_add_counter(StatisticsInfo *info, int clock_counter)
 {
-    fprintf(stderr, "counter + %d\n", clock_counter);
     info->clock_counter += clock_counter;
 }
 
@@ -50,6 +49,7 @@ statistics_create(ConfigFile *cfg)
     }
     StatisticsInfo *info = (StatisticsInfo *) calloc(1, sizeof(*info));
     // как быть с выбором стратегии тут?
+    // кеш пусть сам ставит...
     
     return info;
 }

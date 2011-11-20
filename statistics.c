@@ -5,6 +5,7 @@
 void
 statistics_add_counter(StatisticsInfo *info, int clock_counter)
 {
+    fprintf(stderr, "counter + %d\n", clock_counter);
     info->clock_counter += clock_counter;
 }
 

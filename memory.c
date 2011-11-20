@@ -34,8 +34,10 @@ void
 memory_read(AbstractMemory *a, memaddr_t addr, int size, MemoryCell *dst)
 {
     Memory *m = (Memory*) a;
-
-    statistics_add_counter(m->b.info, (size + m->memory_width - 1) / m->memory_width * m->memory_read_time);
+fprintf(stderr, "|r|%d %d\n", (size + m->memory_width - 1) / 
+                           m->memory_width, size);
+    statistics_add_counter(m->b.info, (size + m->memory_width - 1) / 
+                           m->memory_width * m->memory_read_time);
     statistics_add_read(m->b.info);
 
     for (; size; ++addr, --size, ++dst) {
@@ -47,8 +49,10 @@ void
 memory_write(AbstractMemory *a, memaddr_t addr, int size, const MemoryCell *src)
 {
     Memory *m = (Memory *) a;
-    
-    statistics_add_counter(m->b.info, (size + m->memory_width - 1) / m->memory_width * m->memory_read_time);
+fprintf(stderr, "|w|%d %d\n", (size + m->memory_width - 1) / 
+                           m->memory_width, size);
+    statistics_add_counter(m->b.info, (size + m->memory_width - 1) /
+                           m->memory_width * m->memory_write_time);
     statistics_add_write(m->b.info);
     
     for (; size; ++addr, --size, ++src) {
@@ -93,30 +97,31 @@ memory_create(ConfigFile *cfg, const char *var_prefix, StatisticsInfo *info)
         error_undefined("memory_create", buf);
     } else if (r < 0 || m->memory_size <= 0 || 
                m->memory_size > MAX_MEM_SIZE || 
-            m->memory_size % KiB != 0) {
+               m->memory_size % KiB != 0) {
         error_invalid("memory_create", buf);
     }
     r = config_get_int(cfg, make_param_name(buf, sizeof(buf), 
-                       var_prefix, "memory_read_time"), &m->memory_size);
+            var_prefix, "memory_read_time"), &m->memory_read_time);
     if (!r) {
         error_undefined("memory_create", buf);
-    } else if (r < 0 || m->memory_size <= 0 || 
-               m->memory_size > MAX_READ_TIME) {
+    } else if (r < 0 || m->memory_read_time < 0 || 
+               m->memory_read_time > MAX_READ_TIME) {
         error_invalid("memory_create", buf);
     }
     r = config_get_int(cfg, make_param_name(buf, sizeof(buf), 
-                       var_prefix, "memory_write_time"), &m->memory_size);
+            var_prefix, "memory_write_time"), &m->memory_write_time);
     if (!r) {
         error_undefined("memory_create", buf);
-    } else if (r < 0 || m->memory_size <= 0 || 
-               m->memory_size > MAX_WRITE_TIME) {
+    } else if (r < 0 || m->memory_write_time < 0 || 
+               m->memory_write_time > MAX_WRITE_TIME) {
         error_invalid("memory_create", buf);
     }
     r = config_get_int(cfg, make_param_name(buf, sizeof(buf), 
-                       var_prefix, "memory_width"), &m->memory_size);
+                       var_prefix, "memory_width"), &m->memory_width);
     if (!r) {
         error_undefined("memory_create", buf);
-    } else if (r < 0 || m->memory_size <= 0 || m->memory_size > MAX_WIDTH) {
+    } else if (r < 0 || m->memory_width <= 0 || 
+               m->memory_width > MAX_WIDTH) {
         error_invalid("memory_create", buf);
     }
 

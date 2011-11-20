@@ -83,6 +83,14 @@ main(int argc, char *argv[])
         }
     }
     statistics_print(info, stderr);
+    FILE *dmp = fopen("dupm.dmp", "w");
+    mem_dump(mem, dmp);
+    fclose(dmp);
+    
+    t = trace_close(t);
+    cache = cache->ops->free(cache);
+    info = statistics_free(info);
+    cfg = config_free(cfg);
     
     return 0;
 }

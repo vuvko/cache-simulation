@@ -6,7 +6,8 @@ enum
     MAX_MEM_SIZE = 1 * GiB,
     MAX_READ_TIME = 100000,
     MAX_WRITE_TIME = MAX_READ_TIME,
-    MAX_WIDTH = 1024
+    MAX_WIDTH = 1024,
+    BLOCK_SIZE = 16
 };
 
 typedef struct Memory
@@ -34,8 +35,6 @@ void
 memory_read(AbstractMemory *a, memaddr_t addr, int size, MemoryCell *dst)
 {
     Memory *m = (Memory*) a;
-fprintf(stderr, "|r|%d %d\n", (size + m->memory_width - 1) / 
-                           m->memory_width, size);
     statistics_add_counter(m->b.info, (size + m->memory_width - 1) / 
                            m->memory_width * m->memory_read_time);
     statistics_add_read(m->b.info);
@@ -49,8 +48,6 @@ void
 memory_write(AbstractMemory *a, memaddr_t addr, int size, const MemoryCell *src)
 {
     Memory *m = (Memory *) a;
-fprintf(stderr, "|w|%d %d\n", (size + m->memory_width - 1) / 
-                           m->memory_width, size);
     statistics_add_counter(m->b.info, (size + m->memory_width - 1) /
                            m->memory_width * m->memory_write_time);
     statistics_add_write(m->b.info);
@@ -128,4 +125,31 @@ memory_create(ConfigFile *cfg, const char *var_prefix, StatisticsInfo *info)
     m->mem = (MemoryCell *) calloc(m->memory_size, sizeof(m->mem[0]));
 
     return (AbstractMemory *) m;
+}
+
+void
+mem_dump(AbstractMemory *a, FILE *f)
+{
+    Memory *m = (Memory *)a;
+    FILE *out;
+    if (!f) {
+        out = stderr;
+    } else {
+        out = f;
+    }
+    int i, j;
+    char *str = (char *) calloc(9, sizeof(*str));
+    for (i = 0; i < m->memory_size; i += 16) {
+        fprintf(out, "%08x", i);
+        for (j = 0; j < BLOCK_SIZE; j++) {
+            if (m->mem[i + j].flags) {
+                sprintf(str, "%08X", m->mem[i + j].value);
+                fprintf(out, " %c%c", str[6], str[7]);
+            } else {
+                fprintf(out, " ??");
+            }
+        }
+        fprintf(out, "\n");
+    }
+    free(str);
 }

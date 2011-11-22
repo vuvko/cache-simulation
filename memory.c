@@ -37,7 +37,6 @@ memory_read(AbstractMemory *a, memaddr_t addr, int size, MemoryCell *dst)
     Memory *m = (Memory*) a;
     statistics_add_counter(m->b.info, (size + m->memory_width - 1) / 
                            m->memory_width * m->memory_read_time);
-    statistics_add_read(m->b.info);
 
     for (; size; ++addr, --size, ++dst) {
         *dst = m->mem[addr];
@@ -50,7 +49,6 @@ memory_write(AbstractMemory *a, memaddr_t addr, int size, const MemoryCell *src)
     Memory *m = (Memory *) a;
     statistics_add_counter(m->b.info, (size + m->memory_width - 1) /
                            m->memory_width * m->memory_write_time);
-    statistics_add_write(m->b.info);
     
     for (; size; ++addr, --size, ++src) {
         m->mem[addr] = *src;

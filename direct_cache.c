@@ -62,6 +62,7 @@ direct_cache_find(DirectCache *c, memaddr_t aligned_addr)
     if (c->blocks[index].addr != aligned_addr) {
         return NULL;
     }
+    statistics_add_hit_counter(c->b.info);
     return &c->blocks[index];
 }
 
@@ -87,13 +88,14 @@ direct_cache_read(AbstractMemory *m,
     DirectCache *c = (DirectCache*) m;
     memaddr_t aligned_addr = addr & -c->block_size;
     statistics_add_counter(c->b.info, c->cache_read_time);
+    statistics_add_read(c->b.info);
     DirectCacheBlock *b = direct_cache_find(c, aligned_addr);
     if (!b) {
         b = direct_cache_place(c, aligned_addr);
         b->addr = aligned_addr;
         c->mem->ops->read(c->mem, aligned_addr, c->block_size, b->mem);
     }
-    memcpy(dst, b->mem + (addr - aligned_addr), size);
+    memcpy(dst, b->mem + (addr - aligned_addr), size * sizeof(b->mem[0]));
 }
 
 static void
@@ -105,6 +107,7 @@ direct_cache_wt_write(AbstractMemory *m,
     DirectCache *c = (DirectCache*) m;
     memaddr_t aligned_addr = addr & -c->block_size;
     statistics_add_counter(c->b.info, c->cache_write_time);
+    statistics_add_write(c->b.info);
     DirectCacheBlock *b = direct_cache_find(c, aligned_addr);
     if (!b) {
         b = direct_cache_place(c, aligned_addr);
@@ -124,6 +127,7 @@ direct_cache_wb_write(AbstractMemory *m,
     DirectCache *c = (DirectCache*) m;
     memaddr_t aligned_addr = addr & -c->block_size;
     statistics_add_counter(c->b.info, c->cache_write_time);
+    statistics_add_write(c->b.info);
     DirectCacheBlock *b = direct_cache_find(c, aligned_addr);
     if (!b) {
         b = direct_cache_place(c, aligned_addr);
@@ -246,6 +250,10 @@ direct_cache_create(ConfigFile *cfg,
     for (i = 0; i < c->block_count; i++) {
         c->blocks[i].mem = (MemoryCell *) calloc(c->block_size, 
                                       sizeof(c->blocks[i].mem[0]));
+        int k;
+        for (k = 0; k < c->block_size; k++) {
+            c->blocks[i].mem[k].value = -1;
+        }
     }
 
     return (AbstractMemory*) c;

@@ -49,6 +49,7 @@ main(int argc, char *argv[])
         return 1;
     }
     TraceStep *ts = NULL;
+    /*
     while (trace_next(t)) {
         ts = trace_get(t);
         if (ts->mem == 'D') {
@@ -56,9 +57,10 @@ main(int argc, char *argv[])
         } else if (ts->op == 'I') {
             mem->ops->reveal(mem, ts->addr, ts->size, ts->value);
         }
-    }
+    }*/
+    t = trace_close(t);
     printf("!!!trace\n\n\n");
-    t = trace_open("trace.txt", NULL);
+    t = trace_open("trace.1.trc", NULL);
     printf("!!!\n\n\n");
     if (!t) {
         fprintf(stderr, "no trace");
@@ -66,18 +68,20 @@ main(int argc, char *argv[])
     }
     ts = NULL;
     while (trace_next(t)) {
+        fprintf(stderr, "||");
         ts = trace_get(t);
-        fprintf(stderr, "%c%c %x %d\n", ts->op, ts->mem, ts->addr, ts->size);
+        fprintf(stderr, "%c%c %x %d %d\n", ts->op, ts->mem, ts->addr, ts->size);
         if (ts->mem == 'D') {
             if (ts->op == 'W') {
                 cache->ops->write(cache, ts->addr, ts->size, ts->value);
             } else if (ts->op == 'R') {
                 cache->ops->read(cache, ts->addr, ts->size, ts->value);
             }
-        } else if (ts->op == 'I') {
+        } else if (ts->mem == 'I') {
             if (ts->op == 'W') {
                 mem->ops->write(mem, ts->addr, ts->size, ts->value);
             } else if (ts->op == 'R') {
+                fprintf(stderr, "reading from memory\n");
                 mem->ops->read(mem, ts->addr, ts->size, ts->value);
             }
         }

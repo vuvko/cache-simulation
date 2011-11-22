@@ -223,7 +223,7 @@ direct_cache_create(ConfigFile *cfg,
     if (!r) {
         error_undefined("direct_cache_create", buf);
     } else if (r < 0 || c->block_size > c->cache_size || 
-               c->block_size % KiB != 0 || c->block_size <= 0 ||
+               c->block_size <= 0 ||
                c->cache_size % c->block_size != 0) {
         error_invalid("direct_cache_create", buf);
     }

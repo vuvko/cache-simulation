@@ -75,12 +75,12 @@ trace_next(Trace *t)
         len = strlen(p);
         for (; isspace(p[len - 1]) && len > 0; len--) {}
         if (len <= 0) {
+            free(str);
             continue;
         }
         p[len] = '\0';
         sscanf(p, " %c%c%n", &op, &mem, &offset);
         if (op != 'R' && op != 'W') {
-            fprintf(stderr, "'%c' - %d\n", op, op);
             trace_error(t, "invalid operation type");
             goto fail;
         }

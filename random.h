@@ -3,8 +3,11 @@
 
 #include "parsecfg.h"
 
-struct Random;
-typedef struct Random Random;
+typedef struct Random
+{
+    RandomOps *ops;
+    int seed;
+} Random;
 
 typedef struct RandomOps
 {

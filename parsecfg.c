@@ -78,7 +78,8 @@ config_read(const char *path)
             error_invalid_chr(func_name, path, line, *v);
             goto fail;
         }
-        for (; isalpha(*v) || isdigit(*v) || *v == '_'; v++){}
+        for (; isalpha(*v) || isdigit(*v) || 
+               *v == '_' || *v == '-'; v++){}
         if (!isspace(*v) && *v != '=') {
             //fprintf(stderr, "Error while parsing config file2\n");
             error_invalid_chr(func_name, path, line, *v);

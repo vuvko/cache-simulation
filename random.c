@@ -5,12 +5,6 @@
 #include "random.h"
 #include "common.h"
 
-struct Random
-{
-    RandomOps *ops;
-    int seed;
-};
-
 Random *
 random_free(Random *rnd)
 {

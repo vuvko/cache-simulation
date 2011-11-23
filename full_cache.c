@@ -16,6 +16,8 @@ typedef struct FullCacheBlock
     memaddr_t addr;
     MemoryCell *mem;
     int dirty;
+    int prev_idx;
+    int next_idx;
 } FullCacheBlock;
 
 struct FullCache;
@@ -23,6 +25,14 @@ typedef struct FullCache FullCache;
 
 typedef struct FullCacheOps
 {
+    void (*unlink_elem)(FullCache *c, 
+                        FullCacheBlock *item, 
+                        int *first, 
+                        int *last);
+    void (*link_elem)(FullCache *c, 
+                      FullCacheBlock *item, 
+                      int *first, 
+                      int *last);
     void (*finalize)(FullCache *c, FullCacheBlock *b);
 } FullCacheOps;
 
@@ -32,12 +42,33 @@ struct FullCache
     FullCacheOps full_ops;
     FullCacheBlock *blocks;
     AbstractMemory *mem;
+    Random *r;
+    int free_first;
+    int free_last;
+    int used_first;
+    int used_last;
     int cache_size;
     int block_size;
     int block_count;
     int cache_read_time;
     int cache_write_time;
 };
+
+static void
+full_cache_unlink_elem(FullCache *c, 
+                       FullCacheBlock *item, 
+                       int *first, 
+                       int *last)
+{
+    if (item->prev_idx < 0) {
+        *first = item->next_idx;
+    } else {
+        c->blocks[item->prev_idx].next_idx = item->next_idx;
+    }
+    if (item->next_idx < 0) {
+        
+    }
+}
 
 static AbstractMemory *
 full_cache_free(AbstractMemory *m)
@@ -59,9 +90,16 @@ static FullCacheBlock *
 full_cache_find(FullCache *c, memaddr_t aligned_addr)
 {
     // FIXME: rewrite!
-    int index = (aligned_addr / c->block_size) % c->block_count;
-    if (c->blocks[index].addr != aligned_addr) {
-        return NULL;
+    int index;
+    for (index = c->used_first; index >=0 && 
+         c->blocks[index].addr != aligned_addr; 
+         idx = c->blocks[index].next_idx) {
+        // unlink elem
+        c->full_ops.unlink_elem(&c->blocks[index], &c->used_first, 
+                                &c->used_last);
+        // link elem first
+        c->full_ops.link_elem(&c->blocks[index], &c->used_first,
+                              &c->used_last);
     }
     return &c->blocks[index];
 }
@@ -70,7 +108,7 @@ static FullCacheBlock *
 full_cache_place(FullCache *c, memaddr_t aligned_addr)
 {
     // FIXME: rewrite!
-    int index = (aligned_addr / c->block_size) % c->block_count;
+    int index = c->rnd->ops->next();
     FullCacheBlock *b = &c->blocks[index];
     if (b->addr != -1) {
         c->full_ops.finalize(c, b);
@@ -197,6 +235,7 @@ full_cache_create(ConfigFile *cfg,
     FullCache *c = (FullCache*) calloc(1, sizeof(*c));
     c->b.info = info;
     c->b.info->hit_counter_needed = 1;
+    c->r = rnd;
     const char *strategy = config_get(cfg, make_param_name(buf, 
                            sizeof(buf), var_prefix, "write_strategy"));
     if (!strategy) {
@@ -212,6 +251,10 @@ full_cache_create(ConfigFile *cfg,
         error_invalid("full_cache_create", buf);
     }
     c->mem = mem;
+    
+    // стратегии замещения:
+    c->full_ops.unlink_elem = &full_cache_unlink_elem;
+    c->full_ops.link_elem = &full_cache_link_elem_first;
     
     int r = config_get_int(cfg, make_param_name(buf, sizeof(buf),
             var_prefix, "cache_size"), &c->cache_size);

@@ -1,5 +1,5 @@
-#ifndef DIRECT_CACHE_H_INCLUDED
-#define DIRECT_CACHE_H_INCLUDED
+#ifndef __DIRECT_CACHE_H__
+#define __DIRECT_CACHE_H__
 
 #include "abstract_memory.h"
 #include "parsecfg.h"

@@ -60,7 +60,7 @@ main(int argc, char *argv[])
     }*/
     t = trace_close(t);
     printf("!!!trace\n\n\n");
-    t = trace_open("trace.1.trc", NULL);
+    t = trace_open("trace.trc", NULL);
     printf("!!!\n\n\n");
     if (!t) {
         fprintf(stderr, "no trace");
@@ -79,10 +79,12 @@ main(int argc, char *argv[])
             }
         } else if (ts->mem == 'I') {
             if (ts->op == 'W') {
-                mem->ops->write(mem, ts->addr, ts->size, ts->value);
+                //mem->ops->write(mem, ts->addr, ts->size, ts->value);
+                cache->ops->write(cache, ts->addr, ts->size, ts->value);
             } else if (ts->op == 'R') {
-                fprintf(stderr, "reading from memory\n");
-                mem->ops->read(mem, ts->addr, ts->size, ts->value);
+                //fprintf(stderr, "reading from memory\n");
+                //mem->ops->read(mem, ts->addr, ts->size, ts->value);
+                cache->ops->read(cache, ts->addr, ts->size, ts->value);
             }
         }
     }

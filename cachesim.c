@@ -7,6 +7,7 @@
 #include "parsecfg.h"
 #include "statistics.h"
 #include "direct_cache.h"
+#include "full_cache.h"
 #include "random.h"
 #include "abstract_memory.h"
 
@@ -34,8 +35,15 @@ main(int argc, char *argv[])
         fprintf(stderr, "no mem\n");
         return 1;
     }
+    printf("!!!random\n\n\n");
+    Random *r = random_create(cfg);
+    printf("!!!\n\n\n");
+    if (!r) {
+        fprintf(stderr, "no random\n");
+        return 1;
+    }
     printf("!!!cache\n\n\n");
-    AbstractMemory *cache = direct_cache_create(cfg, "", info, mem, NULL);
+    AbstractMemory *cache = direct_cache_create(cfg, "", info, mem, r);
     printf("!!!\n\n\n");
     if (!cache) {
         fprintf(stderr, "no cache\n");
@@ -73,8 +81,10 @@ main(int argc, char *argv[])
         fprintf(stderr, "%c%c %x %d %d\n", ts->op, ts->mem, ts->addr, ts->size);
         if (ts->mem == 'D') {
             if (ts->op == 'W') {
+                //mem->ops->write(mem, ts->addr, ts->size, ts->value);
                 cache->ops->write(cache, ts->addr, ts->size, ts->value);
             } else if (ts->op == 'R') {
+                //mem->ops->read(mem, ts->addr, ts->size, ts->value);
                 cache->ops->read(cache, ts->addr, ts->size, ts->value);
             }
         } else if (ts->mem == 'I') {
@@ -82,7 +92,6 @@ main(int argc, char *argv[])
                 //mem->ops->write(mem, ts->addr, ts->size, ts->value);
                 cache->ops->write(cache, ts->addr, ts->size, ts->value);
             } else if (ts->op == 'R') {
-                //fprintf(stderr, "reading from memory\n");
                 //mem->ops->read(mem, ts->addr, ts->size, ts->value);
                 cache->ops->read(cache, ts->addr, ts->size, ts->value);
             }

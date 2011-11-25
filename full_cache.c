@@ -27,14 +27,15 @@ typedef struct FullCacheOps
 {
     void (*unlink_elem)(
         FullCache *c, 
-        FullCacheBlock *item, 
+        int idx,
         int *first, 
         int *last);
-    void (*link_elem_first)(
+    void (*link_elem)(
         FullCache *c, 
-        FullCacheBlock *item, 
+        int idx, 
         int *first, 
         int *last);
+    int (*get_used)(FullCache *c);
     void (*finalize)(FullCache *c, FullCacheBlock *b);
 } FullCacheOps;
 
@@ -59,17 +60,17 @@ struct FullCache
 static void
 full_cache_unlink_elem_rnd(
     FullCache *c, 
-    int idx 
-    int *first, 
+    int idx,
+    int *first,
     int *last)
 {
     if (c->blocks[idx].prev_idx < 0) {
         *first = c->blocks[idx].next_idx;
     } else {
-        c->blocks[item->prev_idx].next_idx = c->blocks[idx].next_idx;
+        c->blocks[c->blocks[idx].prev_idx].next_idx = c->blocks[idx].next_idx;
     }
     if (c->blocks[idx].next_idx < 0) {
-        *last = c->blocks[idx].prev->idx;
+        *last = c->blocks[idx].prev_idx;
     } else {
         c->blocks[c->blocks[idx].next_idx].prev_idx = 
             c->blocks[idx].prev_idx;
@@ -79,12 +80,31 @@ full_cache_unlink_elem_rnd(
 }
 
 static void
-full_cache_link_item_first_rnd(
+full_cache_unlink_elem_lfu(
+    FullCache *c, 
+    int idx,
+    int *first,
+    int *last)
+{
+    // FIXME: write
+}
+
+static void
+full_cache_unlink_elem_lru(
+    FullCache *c, 
+    int idx,
+    int *first,
+    int *last)
+{
+    // FIXME: write
+}
+
+static void
+full_cache_link_elem_first(
     FullCache *c,
     int idx,
     int *first,
-    int *last
-    int idx)
+    int *last)
 {
     c->blocks[idx].next_idx = *first;
     c->blocks[*first].prev_idx = idx;
@@ -92,6 +112,56 @@ full_cache_link_item_first_rnd(
     if (*last < 0) {
         *last = idx;
     }
+}
+
+static void
+full_cache_link_elem_rnd(
+    FullCache *c,
+    int idx,
+    int *first,
+    int *last)
+{
+    full_cache_link_elem_first(c, idx, first, last);
+}
+
+static void
+full_cache_link_elem_lfu(
+    FullCache *c,
+    int idx,
+    int *first,
+    int *last)
+{
+    // FIXME: write
+}
+
+static void
+full_cache_link_elem_lru(
+    FullCache *c,
+    int idx,
+    int *first,
+    int *last)
+{
+    full_cache_link_elem_first(c, idx, first, last);
+}
+
+int
+full_cache_get_used_rnd(FullCache *c)
+{
+    return c->r->ops->next(c->r, c->block_count);
+}
+
+int
+full_cache_get_used_lfu(FullCache *c)
+{
+    // FIXME: write
+    return 0;
+}
+
+int
+full_cache_get_used_lru(FullCache *c)
+{
+    // FIXME: write
+    return 0;
 }
 
 static AbstractMemory *
@@ -114,20 +184,24 @@ static FullCacheBlock *
 full_cache_find(FullCache *c, memaddr_t aligned_addr)
 {
     int index;
+    fprintf(stderr, "still alive (find)\n");
     for (index = c->used_first; index >= 0 && 
          c->blocks[index].addr != aligned_addr; 
          index = c->blocks[index].next_idx) {}
+    fprintf(stderr, "still alive (find)\n");
     if (index < 0) {
         return NULL;
     }
+    fprintf(stderr, "still alive (find)\n");
     if (index != c->used_first) {
         // unlink elem
-        c->full_ops.unlink_elem(&c->blocks[index], &c->used_first, 
+        c->full_ops.unlink_elem(c, index, &c->used_first, 
                                 &c->used_last);
         // link elem first
-        c->full_ops.link_elem_first(&c->blocks[index], &c->used_first,
-                                    index);
+        c->full_ops.link_elem(c, index, &c->used_first,
+                                    &c->used_last);
     }
+    fprintf(stderr, "still alive (find)\n");
     return &c->blocks[index];
 }
 
@@ -139,11 +213,12 @@ full_cache_place(FullCache *c, memaddr_t aligned_addr)
     if (c->free_first >= 0) {
         index = c->free_first;
         b = &c->blocks[index];
-        c->full_ops.unlink_elem(c, b, &c->free_first, &c->free_last);
-        c->full_ops.link_elem_first(c, b, &c->used_first, index);
+        c->full_ops.unlink_elem(c, index, &c->free_first, &c->free_last);
+        full_cache_link_elem_first(c, index, &c->used_first, 
+                                    &c->used_last);
         return b;
     }
-    index = c->rnd->ops->next(c->block_count);
+    index = c->full_ops.get_used(c);
     b = &c->blocks[index];
     if (b->addr != -1) {
         c->full_ops.finalize(c, b);
@@ -163,15 +238,20 @@ full_cache_read(AbstractMemory *m,
     memaddr_t aligned_addr = addr & -c->block_size;
     statistics_add_counter(c->b.info, c->cache_read_time);
     statistics_add_read(c->b.info);
+    fprintf(stderr, "still alive (read)\n");
     FullCacheBlock *b = full_cache_find(c, aligned_addr);
     if (!b) {
+        fprintf(stderr, "still alive (read in)\n");
         b = full_cache_place(c, aligned_addr);
         b->addr = aligned_addr;
+        fprintf(stderr, "still alive (read in)\n");
         c->mem->ops->read(c->mem, aligned_addr, c->block_size, b->mem);
     } else {
         statistics_add_hit_counter(c->b.info);
     }
+    fprintf(stderr, "still alive (read)\n");
     memcpy(dst, b->mem + (addr - aligned_addr), size * sizeof(b->mem[0]));
+    fprintf(stderr, "still alive (read)\n");
 }
 
 static void
@@ -271,6 +351,7 @@ full_cache_create(ConfigFile *cfg,
     c->b.info = info;
     c->b.info->hit_counter_needed = 1;
     c->r = rnd;
+    srand(c->r->seed);
     const char *strategy = config_get(cfg, make_param_name(buf, 
                            sizeof(buf), var_prefix, "write_strategy"));
     if (!strategy) {
@@ -288,9 +369,24 @@ full_cache_create(ConfigFile *cfg,
     c->mem = mem;
     
     // стратегии замещения:
-    c->full_ops.unlink_elem = &full_cache_unlink_elem;
-    c->full_ops.link_elem = &full_cache_link_elem_first;
-    
+    const char *replace = config_get(cfg, make_param_name(buf, 
+                    sizeof(buf), var_prefix, "replacement_strategy"));
+    if (!replace) {
+        error_undefined("full_cache_create", buf);
+    } else if (!strcmp(replace, "random")) {
+        c->full_ops.unlink_elem = &full_cache_unlink_elem_rnd;
+        c->full_ops.link_elem = &full_cache_link_elem_rnd;
+        c->full_ops.get_used = &full_cache_get_used_rnd;
+    } else if (!strcmp(replace, "lfu")) {
+        c->full_ops.unlink_elem = &full_cache_unlink_elem_lfu;
+        c->full_ops.link_elem = &full_cache_link_elem_lfu;
+        c->full_ops.get_used = &full_cache_get_used_lfu;
+    } else if (!strcmp(replace, "lru")) {
+        c->full_ops.unlink_elem = &full_cache_unlink_elem_lru;
+        c->full_ops.link_elem = &full_cache_link_elem_lru;
+        c->full_ops.get_used = &full_cache_get_used_lru;
+    }
+
     int r = config_get_int(cfg, make_param_name(buf, sizeof(buf),
             var_prefix, "cache_size"), &c->cache_size);
     if (!r) {
@@ -332,7 +428,14 @@ full_cache_create(ConfigFile *cfg,
         c->blocks[i].mem = (MemoryCell *) calloc(c->block_size, 
                                       sizeof(c->blocks[i].mem[0]));
         c->blocks[i].addr = -1;
+        c->blocks[i].next_idx = i + 1;
+        c->blocks[i].prev_idx = i - 1;
     }
+    c->blocks[c->block_count - 1].next_idx = -1;
+    c->used_first = -1;
+    c->used_last = -1;
+    c->free_first = 0;
+    c->free_last = c->block_count - 1;
 
     return (AbstractMemory*) c;
 }

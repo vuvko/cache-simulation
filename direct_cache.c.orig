@@ -1,4 +1,4 @@
-#include "full_cache.h"
+#include "direct_cache.h"
 #include "common.h"
 
 #include <stdlib.h>
@@ -11,44 +11,27 @@ enum
     MAX_WRITE_TIME = MAX_READ_TIME
 };
 
-typedef struct FullCacheBlock
+typedef struct DirectCacheBlock
 {
     memaddr_t addr;
     MemoryCell *mem;
     int dirty;
-    int prev_idx;
-    int next_idx;
-} FullCacheBlock;
+} DirectCacheBlock;
 
-struct FullCache;
-typedef struct FullCache FullCache;
+struct DirectCache;
+typedef struct DirectCache DirectCache;
 
-typedef struct FullCacheOps
+typedef struct DirectCacheOps
 {
-    void (*unlink_elem)(
-        FullCache *c, 
-        FullCacheBlock *item, 
-        int *first, 
-        int *last);
-    void (*link_elem_first)(
-        FullCache *c, 
-        FullCacheBlock *item, 
-        int *first, 
-        int *last);
-    void (*finalize)(FullCache *c, FullCacheBlock *b);
-} FullCacheOps;
+    void (*finalize)(DirectCache *c, DirectCacheBlock *b);
+} DirectCacheOps;
 
-struct FullCache
+struct DirectCache
 {
     AbstractMemory b;
-    FullCacheOps full_ops;
-    FullCacheBlock *blocks;
+    DirectCacheOps direct_ops;
+    DirectCacheBlock *blocks;
     AbstractMemory *mem;
-    Random *r;
-    int free_first;
-    int free_last;
-    int used_first;
-    int used_last;
     int cache_size;
     int block_size;
     int block_count;
@@ -56,49 +39,11 @@ struct FullCache
     int cache_write_time;
 };
 
-static void
-full_cache_unlink_elem_rnd(
-    FullCache *c, 
-    int idx 
-    int *first, 
-    int *last)
-{
-    if (c->blocks[idx].prev_idx < 0) {
-        *first = c->blocks[idx].next_idx;
-    } else {
-        c->blocks[item->prev_idx].next_idx = c->blocks[idx].next_idx;
-    }
-    if (c->blocks[idx].next_idx < 0) {
-        *last = c->blocks[idx].prev->idx;
-    } else {
-        c->blocks[c->blocks[idx].next_idx].prev_idx = 
-            c->blocks[idx].prev_idx;
-    }
-    c->blocks[idx].next_idx = -1;
-    c->blocks[idx].prev_idx = -1;
-}
-
-static void
-full_cache_link_item_first_rnd(
-    FullCache *c,
-    int idx,
-    int *first,
-    int *last
-    int idx)
-{
-    c->blocks[idx].next_idx = *first;
-    c->blocks[*first].prev_idx = idx;
-    *first = idx;
-    if (*last < 0) {
-        *last = idx;
-    }
-}
-
 static AbstractMemory *
-full_cache_free(AbstractMemory *m)
+direct_cache_free(AbstractMemory *m)
 {
     if (m) {
-        FullCache *c = (FullCache *) m;
+        DirectCache *c = (DirectCache *) m;
         c->mem = c->mem->ops->free(c->mem);
         int i;
         for (i = 0; i < c->block_count; i++) {
@@ -110,43 +55,24 @@ full_cache_free(AbstractMemory *m)
     return NULL;
 }
 
-static FullCacheBlock *
-full_cache_find(FullCache *c, memaddr_t aligned_addr)
+static DirectCacheBlock *
+direct_cache_find(DirectCache *c, memaddr_t aligned_addr)
 {
-    int index;
-    for (index = c->used_first; index >= 0 && 
-         c->blocks[index].addr != aligned_addr; 
-         index = c->blocks[index].next_idx) {}
-    if (index < 0) {
+    int index = (aligned_addr / c->block_size) % c->block_count;
+    if (c->blocks[index].addr != aligned_addr) {
         return NULL;
     }
-    if (index != c->used_first) {
-        // unlink elem
-        c->full_ops.unlink_elem(&c->blocks[index], &c->used_first, 
-                                &c->used_last);
-        // link elem first
-        c->full_ops.link_elem_first(&c->blocks[index], &c->used_first,
-                                    index);
-    }
+    statistics_add_hit_counter(c->b.info);
     return &c->blocks[index];
 }
 
-static FullCacheBlock *
-full_cache_place(FullCache *c, memaddr_t aligned_addr)
+static DirectCacheBlock *
+direct_cache_place(DirectCache *c, memaddr_t aligned_addr)
 {
-    FullCacheBlock *b;
-    int index;
-    if (c->free_first >= 0) {
-        index = c->free_first;
-        b = &c->blocks[index];
-        c->full_ops.unlink_elem(c, b, &c->free_first, &c->free_last);
-        c->full_ops.link_elem_first(c, b, &c->used_first, index);
-        return b;
-    }
-    index = c->rnd->ops->next(c->block_count);
-    b = &c->blocks[index];
+    int index = (aligned_addr / c->block_size) % c->block_count;
+    DirectCacheBlock *b = &c->blocks[index];
     if (b->addr != -1) {
-        c->full_ops.finalize(c, b);
+        c->direct_ops.finalize(c, b);
         b->addr = -1;
         memset(b->mem, 0, c->block_size * sizeof(b->mem[0]));
     }
@@ -154,39 +80,37 @@ full_cache_place(FullCache *c, memaddr_t aligned_addr)
 }
 
 static void
-full_cache_read(AbstractMemory *m, 
+direct_cache_read(AbstractMemory *m, 
                   memaddr_t addr, 
                   int size, 
                   MemoryCell *dst)
 {
-    FullCache *c = (FullCache*) m;
+    DirectCache *c = (DirectCache*) m;
     memaddr_t aligned_addr = addr & -c->block_size;
     statistics_add_counter(c->b.info, c->cache_read_time);
     statistics_add_read(c->b.info);
-    FullCacheBlock *b = full_cache_find(c, aligned_addr);
+    DirectCacheBlock *b = direct_cache_find(c, aligned_addr);
     if (!b) {
-        b = full_cache_place(c, aligned_addr);
+        b = direct_cache_place(c, aligned_addr);
         b->addr = aligned_addr;
         c->mem->ops->read(c->mem, aligned_addr, c->block_size, b->mem);
-    } else {
-        statistics_add_hit_counter(c->b.info);
     }
     memcpy(dst, b->mem + (addr - aligned_addr), size * sizeof(b->mem[0]));
 }
 
 static void
-full_cache_wt_write(AbstractMemory *m, 
+direct_cache_wt_write(AbstractMemory *m, 
                       memaddr_t addr, 
                       int size, 
                       const MemoryCell *src)
 {
-    FullCache *c = (FullCache*) m;
+    DirectCache *c = (DirectCache*) m;
     memaddr_t aligned_addr = addr & -c->block_size;
     statistics_add_counter(c->b.info, c->cache_write_time);
     statistics_add_write(c->b.info);
-    FullCacheBlock *b = full_cache_find(c, aligned_addr);
+    DirectCacheBlock *b = direct_cache_find(c, aligned_addr);
     if (!b) {
-        b = full_cache_place(c, aligned_addr);
+        b = direct_cache_place(c, aligned_addr);
         b->addr = aligned_addr;
         c->mem->ops->read(c->mem, aligned_addr, c->block_size, b->mem);
     }
@@ -195,18 +119,18 @@ full_cache_wt_write(AbstractMemory *m,
 }
 
 static void
-full_cache_wb_write(AbstractMemory *m, 
+direct_cache_wb_write(AbstractMemory *m, 
                       memaddr_t addr, 
                       int size, 
                       const MemoryCell *src)
 {
-    FullCache *c = (FullCache*) m;
+    DirectCache *c = (DirectCache*) m;
     memaddr_t aligned_addr = addr & -c->block_size;
     statistics_add_counter(c->b.info, c->cache_write_time);
     statistics_add_write(c->b.info);
-    FullCacheBlock *b = full_cache_find(c, aligned_addr);
+    DirectCacheBlock *b = direct_cache_find(c, aligned_addr);
     if (!b) {
-        b = full_cache_place(c, aligned_addr);
+        b = direct_cache_place(c, aligned_addr);
         b->addr = aligned_addr;
         c->mem->ops->read(c->mem, aligned_addr, c->block_size, b->mem);
     }
@@ -215,14 +139,14 @@ full_cache_wb_write(AbstractMemory *m,
 }
 
 static void
-full_cache_reveal(AbstractMemory *m, 
+direct_cache_reveal(AbstractMemory *m, 
                     memaddr_t addr, 
                     int size, 
                     const MemoryCell *src)
 {
-    FullCache *c = (FullCache*) m;
+    DirectCache *c = (DirectCache*) m;
     memaddr_t aligned_addr = addr & -c->block_size;
-    FullCacheBlock *b = full_cache_find(c, aligned_addr);
+    DirectCacheBlock *b = direct_cache_find(c, aligned_addr);
     if (b) {
         memcpy(b->mem + (addr - aligned_addr), src, size * sizeof(b->mem[0]));
     }
@@ -230,108 +154,110 @@ full_cache_reveal(AbstractMemory *m,
 }
 
 static void
-full_cache_wt_finalize(FullCache *c, FullCacheBlock *b)
+direct_cache_wt_finalize(DirectCache *c, DirectCacheBlock *b)
 {
     // ничего не делаем...
 }
 
 static void
-full_cache_wb_finalize(FullCache *c, FullCacheBlock *b)
+direct_cache_wb_finalize(DirectCache *c, DirectCacheBlock *b)
 {
     // записываем грязный блок в память...
     c->mem->ops->write(c->mem, b->addr, c->block_size, b->mem);
     b->dirty = 0;
 }
 
-static AbstractMemoryOps full_cache_wt_ops =
+static AbstractMemoryOps direct_cache_wt_ops =
 {
-    full_cache_free,
-    full_cache_read,
-    full_cache_wt_write,
-    full_cache_reveal,
+    direct_cache_free,
+    direct_cache_read,
+    direct_cache_wt_write,
+    direct_cache_reveal,
 };
 
-static AbstractMemoryOps full_cache_wb_ops =
+static AbstractMemoryOps direct_cache_wb_ops =
 {
-    full_cache_free,
-    full_cache_read,
-    full_cache_wb_write,
-    full_cache_reveal,
+    direct_cache_free,
+    direct_cache_read,
+    direct_cache_wb_write,
+    direct_cache_reveal,
 };
 
 AbstractMemory *
-full_cache_create(ConfigFile *cfg, 
+direct_cache_create(ConfigFile *cfg, 
                     const char *var_prefix, 
                     StatisticsInfo *info, 
                     AbstractMemory *mem, 
                     Random *rnd)
 {
     char buf[1024];
-    FullCache *c = (FullCache*) calloc(1, sizeof(*c));
+    DirectCache *c = (DirectCache*) calloc(1, sizeof(*c));
     c->b.info = info;
     c->b.info->hit_counter_needed = 1;
-    c->r = rnd;
     const char *strategy = config_get(cfg, make_param_name(buf, 
                            sizeof(buf), var_prefix, "write_strategy"));
     if (!strategy) {
-        error_undefined("full_cache_create", buf);
+        error_undefined("direct_cache_create", buf);
     } else if (!strcmp(strategy, "write-through")) {
-        c->b.ops = &full_cache_wt_ops;
-        c->full_ops.finalize = full_cache_wt_finalize;
+        c->b.ops = &direct_cache_wt_ops;
+        c->direct_ops.finalize = direct_cache_wt_finalize;
     } else if (!strcmp(strategy, "write-back")) {
-        c->b.ops = &full_cache_wb_ops;
-        c->full_ops.finalize = full_cache_wb_finalize;
+        c->b.ops = &direct_cache_wb_ops;
+        c->direct_ops.finalize = direct_cache_wb_finalize;
         c->b.info->write_back_needed = 1;
     } else {
-        error_invalid("full_cache_create", buf);
+        error_invalid("direct_cache_create", buf);
     }
     c->mem = mem;
-    
-    // стратегии замещения:
-    c->full_ops.unlink_elem = &full_cache_unlink_elem;
-    c->full_ops.link_elem = &full_cache_link_elem_first;
     
     int r = config_get_int(cfg, make_param_name(buf, sizeof(buf),
             var_prefix, "cache_size"), &c->cache_size);
     if (!r) {
-        error_undefined("full_cache_create", buf);
+        error_undefined("direct_cache_create", buf);
     } else if (r < 0 || c->cache_size > MAX_CACHE_SIZE ||
                c->cache_size <= 0) {
-        error_invalid("full_cache_create", buf);
+        error_invalid("direct_cache_create", buf);
     }
     r = config_get_int(cfg, make_param_name(buf, sizeof(buf),
             var_prefix, "block_size"), &c->block_size);
     if (!r) {
-        error_undefined("full_cache_create", buf);
+        error_undefined("direct_cache_create", buf);
     } else if (r < 0 || c->block_size > c->cache_size || 
                c->block_size <= 0 ||
                c->cache_size % c->block_size != 0) {
-        error_invalid("full_cache_create", buf);
+        error_invalid("direct_cache_create", buf);
     }
     r = config_get_int(cfg, make_param_name(buf, sizeof(buf),
             var_prefix, "cache_read_time"), &c->cache_read_time);
     if (!r) {
-        error_undefined("full_cache_create", buf);
+        error_undefined("direct_cache_create", buf);
     } else if (r < 0 || c->cache_read_time < 0 ||
                c->cache_read_time > MAX_READ_TIME) {
-        error_invalid("full_cache_create", buf);
+        error_invalid("direct_cache_create", buf);
     }
     r = config_get_int(cfg, make_param_name(buf, sizeof(buf),
             var_prefix, "cache_write_time"), &c->cache_write_time);
     if (!r) {
-        error_undefined("full_cache_create", buf);
+        error_undefined("direct_cache_create", buf);
     } else if (r < 0 || c->cache_write_time < 0 ||
                c->cache_write_time > MAX_WRITE_TIME) {
-        error_invalid("full_cache_create", buf);
+        error_invalid("direct_cache_create", buf);
     }
     c->block_count = c->cache_size / c->block_size;
-    c->blocks = (FullCacheBlock *) calloc(c->block_count, 
+    c->blocks = (DirectCacheBlock *) calloc(c->block_count, 
                                             sizeof(c->blocks[0]));
     int i;
     for (i = 0; i < c->block_count; i++) {
         c->blocks[i].mem = (MemoryCell *) calloc(c->block_size, 
                                       sizeof(c->blocks[i].mem[0]));
+<<<<<<< local
         c->blocks[i].addr = -1;
+=======
+        int k;
+        for (k = 0; k < c->block_size; k++) {
+            c->blocks[i].mem[k].value = -1;
+        }
+>>>>>>> other
     }
 
     return (AbstractMemory*) c;

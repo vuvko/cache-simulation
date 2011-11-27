@@ -72,6 +72,7 @@ statistics_print(StatisticsInfo *info, FILE *f)
         fprintf(out, "read hits: %d\n", info->hit_counter);
     }
     if (info->write_back_needed) {
-        fprintf(out, "cache block writes: %d\n", info->write_back_counter);
+        fprintf(out, "cache block writes: %d\n",
+            info->write_back_counter);
     }
 }

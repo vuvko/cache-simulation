@@ -55,7 +55,8 @@ TraceStep *trace_get(Trace *t) {
 void
 trace_error(Trace *t, const char *text)
 {
-    fprintf(t->log_f, "%s: %d: trace_next: %s\n", t->path, t->lineno, text);
+    fprintf(t->log_f, "%s: %d: trace_next: %s\n", t->path, 
+        t->lineno, text);
 }
 
 int
@@ -99,12 +100,13 @@ trace_next(Trace *t)
             goto fail;
         }
         p = endp;
-        if (p == '\0') {
+        if (*p == '\0') {
             size = 1;
             value = 0;
         } else {
             size = strtol(p, &endp, 10);
-            if (errno || !inarrayd(size, validsize, sizeof(validsize))) {
+            if (errno || !inarrayd(size, validsize, 
+                sizeof(validsize) / sizeof(validsize[0]))) {
                 trace_error(t, "invalid size");
                 goto fail;
             }

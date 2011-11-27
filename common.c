@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <string.h>
 
 #include "common.h"
 
@@ -38,6 +39,22 @@ inarrayd(int value, int *array, int size)
         }
     }
     return 0;
+}
+
+int
+arrayidx_str(char *value, char **array, int size)
+{
+    int i;
+    fprintf(stderr, "enter\n");
+    for (i = 0; i < size; i++) {
+        fprintf(stderr, "%d\n", i);
+        if (!strcmp(value, array[i])) {
+            fprintf(stderr, "yep %d\n", i);
+            return i;
+        }
+    }
+    fprintf(stderr, "no\n");
+    return -1;
 }
 
 char *

@@ -10,9 +10,21 @@ typedef struct AbstractMemory AbstractMemory;
 typedef struct AbstractMemoryOps
 {
     AbstractMemory *(*free)(AbstractMemory *m);
-    void (*read)(AbstractMemory *m, memaddr_t addr, int size, MemoryCell *dst);
-    void (*write)(AbstractMemory *m, memaddr_t addr, int size, const MemoryCell *src);
-    void (*reveal)(AbstractMemory *m, memaddr_t addr, int size, const MemoryCell *src);
+    void (*read)(
+        AbstractMemory *m, 
+        memaddr_t addr, 
+        int size, MemoryCell 
+        *dst);
+    void (*write)(
+        AbstractMemory *m, 
+        memaddr_t addr, 
+        int size, 
+        const MemoryCell *src);
+    void (*reveal)(
+        AbstractMemory *m, 
+        memaddr_t addr, 
+        int size, 
+        const MemoryCell *src);
 } AbstractMemoryOps;
 
 struct AbstractMemory

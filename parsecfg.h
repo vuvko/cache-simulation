@@ -3,6 +3,7 @@
 
 struct ConfigFile;
 typedef struct ConfigFile ConfigFile;
+
 ConfigFile *config_read(const char *path);
 ConfigFile *config_free(ConfigFile *config);
 const char *config_get(ConfigFile *config, const char *name);

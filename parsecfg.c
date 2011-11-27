@@ -59,13 +59,21 @@ config_read(const char *path)
     cfg->alc = 1;
     cfg->v = (ConfigEntry *) calloc(1, sizeof(cfg->v[0]));
     cfg->used = 0;
-    int line = 0;
+    int line = 0, len = 0;
     while ((str = getline2(in)) != NULL) {
         line++;
         char *p = NULL;
         if ((p = strchr(str, '#'))) {
             *p = 0;
         }
+        p = str;
+        len = strlen(p);
+        for (; isspace(p[len - 1]) && len > 0; len--) {}
+        if (len <= 0) {
+            free(str);
+            continue;
+        }
+        p[len] = '\0';
         k = str;
         for (; isspace(*k); k++) {}
         if (*k == '\0' || *k == '\n') {
@@ -109,7 +117,8 @@ config_read(const char *path)
         *cur = '\0';
         if (cfg->used == cfg->alc) {
             cfg->alc *= 2;
-            cfg->v = (ConfigEntry *) realloc(cfg->v, cfg->alc * sizeof(cfg->v[0]));
+            cfg->v = (ConfigEntry *) realloc(cfg->v, 
+                cfg->alc * sizeof(cfg->v[0]));
         }
         cfg->v[cfg->used].name = strdup(k);
         cfg->v[cfg->used].value = strdup(v);
@@ -156,9 +165,10 @@ config_get(ConfigFile *config, const char *name)
 }
 
 int 
-config_get_int(ConfigFile *config,
-                           const char *name,
-                           int *p_int)
+config_get_int(
+    ConfigFile *config,
+    const char *name,
+    int *p_int)
 {
     if (!name || !config || !p_int) {
         return 0;

@@ -24,15 +24,23 @@ AbstractMemory *
 memory_free(AbstractMemory *a)
 {
     if (a != NULL) {
+        fprintf(stderr, "Memfree\n");
         Memory *m = (Memory *) a;
+        fprintf(stderr, "Memfree %x %d\n", m->mem[m->memory_size - 1].value, m->mem[m->memory_size - 1].flags);
         free(m->mem);
+        fprintf(stderr, "Memfree\n");
         free(m);
+        fprintf(stderr, "Memfree\n");
     }
     return NULL;
 }
 
 void
-memory_read(AbstractMemory *a, memaddr_t addr, int size, MemoryCell *dst)
+memory_read(
+    AbstractMemory *a, 
+    memaddr_t addr, 
+    int size, 
+    MemoryCell *dst)
 {
     Memory *m = (Memory*) a;
     statistics_add_counter(m->b.info, (size + m->memory_width - 1) / 
@@ -44,7 +52,11 @@ memory_read(AbstractMemory *a, memaddr_t addr, int size, MemoryCell *dst)
 }
 
 void
-memory_write(AbstractMemory *a, memaddr_t addr, int size, const MemoryCell *src)
+memory_write(
+    AbstractMemory *a, 
+    memaddr_t addr, 
+    int size, 
+    const MemoryCell *src)
 {
     Memory *m = (Memory *) a;
     statistics_add_counter(m->b.info, (size + m->memory_width - 1) /
@@ -56,7 +68,11 @@ memory_write(AbstractMemory *a, memaddr_t addr, int size, const MemoryCell *src)
 }
 
 static void
-memory_reveal(AbstractMemory *a, memaddr_t addr, int size, const MemoryCell *src)
+memory_reveal(
+    AbstractMemory *a, 
+    memaddr_t addr, 
+    int size, 
+    const MemoryCell *src)
 {
     Memory *m = (Memory *) a;
 
@@ -74,7 +90,10 @@ static AbstractMemoryOps memory_ops =
 };
 
 AbstractMemory *
-memory_create(ConfigFile *cfg, const char *var_prefix, StatisticsInfo *info)
+memory_create(
+    ConfigFile *cfg, 
+    const char *var_prefix, 
+    StatisticsInfo *info)
 {
     if (!info || !var_prefix || !cfg) {
         return NULL;

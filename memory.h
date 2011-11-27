@@ -6,7 +6,10 @@
 
 #include <stdio.h>
 
-AbstractMemory *memory_create(ConfigFile *cfg, const char *var_prefix, StatisticsInfo *info);
+AbstractMemory *memory_create(
+    ConfigFile *cfg, 
+    const char *var_prefix, 
+    StatisticsInfo *info);
 void mem_dump(AbstractMemory *a, FILE *f);
 
 #endif

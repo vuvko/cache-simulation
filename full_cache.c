@@ -247,8 +247,8 @@ full_cache_place(FullCache *c, memaddr_t aligned_addr)
         return b;
     }
     index = c->full_ops.get_used(c);
-    //full_cache_unlink_elem(c, index, &c->used_first, &c->used_last);
-    //c->full_ops.link_elem(c, index, &c->used_first, &c->used_last);
+    full_cache_unlink_elem(c, index, &c->used_first, &c->used_last);
+    c->full_ops.link_elem(c, index, &c->used_first, &c->used_last);
     b = &c->blocks[index];
     if (b->addr != -1) {
         c->full_ops.finalize(c, b);
@@ -269,6 +269,7 @@ full_cache_read(
     memaddr_t aligned_addr = addr & -c->block_size;
     statistics_add_counter(c->b.info, c->cache_read_time);
     statistics_add_read(c->b.info);
+    c->mem->ops->reveal(c->mem, addr, size, dst);
     FullCacheBlock *b = full_cache_find(c, aligned_addr);
     if (!b) {
         b = full_cache_place(c, aligned_addr);
@@ -293,13 +294,10 @@ full_cache_wt_write(
     statistics_add_counter(c->b.info, c->cache_write_time);
     statistics_add_write(c->b.info);
     FullCacheBlock *b = full_cache_find(c, aligned_addr);
-    if (!b) {
-        b = full_cache_place(c, aligned_addr);
-        b->addr = aligned_addr;
-        c->mem->ops->read(c->mem, aligned_addr, c->block_size, b->mem);
+    if (b) {
+        memcpy(b->mem + (addr - aligned_addr), src, 
+            size * sizeof(b->mem[0]));
     }
-    memcpy(b->mem + (addr - aligned_addr), src, 
-        size * sizeof(b->mem[0]));
     c->mem->ops->write(c->mem, addr, size, src);
 }
 

@@ -24,15 +24,10 @@ AbstractMemory *
 memory_free(AbstractMemory *a)
 {
     if (a != NULL) {
-        fprintf(stderr, "Memfree\n");
         Memory *m = (Memory *) a;
-        fprintf(stderr, "Memfree %x %d\n", m->mem[m->memory_size - 1].value, m->mem[m->memory_size - 1].flags);
         free(m->mem);
-        fprintf(stderr, "Memfree\n");
         m->mem = NULL;
-        fprintf(stderr, "Memfree\n");
         free(m);
-        fprintf(stderr, "Memfree\n");
     }
     return NULL;
 }

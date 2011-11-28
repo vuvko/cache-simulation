@@ -15,6 +15,7 @@ int
 main(int argc, char *argv[])
 {
     int i, idx, cfg_i = 0, log_i = 0, dmp = 0, stat = 0, en_cache = 1;
+    int dmp_i = 0;
     char *params[] = {
         "--disable-cache",
         "-d",
@@ -23,7 +24,9 @@ main(int argc, char *argv[])
         "--log",
         "-l",
         "--statistics",
-        "-s"
+        "-s",
+        "--dump-file",
+        "-mf"
     };
     for (i = 1; i < argc; i++) {
         if ((idx = arrayidx_str(argv[i], params, 
@@ -44,6 +47,10 @@ main(int argc, char *argv[])
                 case 6:
                 case 7:
                     stat = 1;
+                    break;
+                case 8:
+                case 9:
+                    dmp_i = ++i;
                     break;
                 default:
                     break;
@@ -131,9 +138,16 @@ main(int argc, char *argv[])
         statistics_print(info, log_f);
     }
     if (dmp) {
-        FILE *dmp = fopen("dump.dmp", "w");
+        FILE *dmp;
+        if (dmp_i > 0) {
+            dmp = fopen(argv[dmp_i], "w");
+        } else {
+            dmp = stdout;
+        }
         mem_dump(mem, dmp);
-        fclose(dmp);
+        if (dmp_i > 0) {
+            fclose(dmp);
+        }
     }
     
     t = trace_close(t);
@@ -141,7 +155,7 @@ main(int argc, char *argv[])
     info = statistics_free(info);
     cfg = config_free(cfg);
     
-    if (log_f) {
+    if (log_i > 0) {
         fclose(log_f);
     }
     

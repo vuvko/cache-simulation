@@ -44,6 +44,8 @@ trace_close(Trace *t)
             fclose(t->f);
         }
         free(t->path);
+        t->path = NULL;
+        free(t);
     }
     return NULL;
 }

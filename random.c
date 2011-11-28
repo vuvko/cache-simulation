@@ -10,6 +10,7 @@ random_free(Random *rnd)
 {
     if (rnd != NULL) {
         free(rnd);
+        rnd = NULL;
     }
     return NULL;
 }
@@ -39,8 +40,7 @@ random_create(ConfigFile *cfg)
     if (!err) {
         rnd->seed = time(NULL);
     } else if (err < 0 || rnd->seed < 0) {
-        char *text = strdup(config_get(cfg, "seed"));
-        error_invalid("random_create", text);
+        error_invalid("random_create", "seed");
         return NULL;
     }
     

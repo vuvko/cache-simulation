@@ -37,6 +37,7 @@ statistics_free(StatisticsInfo *info)
 {
     if (info != NULL) {
         free(info);
+        info = NULL;
     }
     return NULL;
 }

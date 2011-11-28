@@ -47,7 +47,8 @@ struct FullCache
     AbstractMemory *mem;
     Random *r;
     // LFU strategy
-    int lfu_count_size; // 
+    int lfu_count_size;
+    int lfu_max_count;
     int lfu_init_value;
     int lfu_aging_interval;
     int lfu_aging_shift;
@@ -118,7 +119,6 @@ full_cache_link_elem_rnd(
     int *first,
     int *last)
 {
-    fprintf(stderr, "Random Linking\n");
     full_cache_link_elem_first(c, idx, first, last);
 }
 
@@ -129,14 +129,12 @@ full_cache_link_elem_lfu(
     int *first,
     int *last)
 {
-    fprintf(stderr, "LFU Linking\n");
     if (c->b.info->read_counter % c->lfu_aging_interval) {
         full_cache_aging(c);
     }
     if (c->blocks[idx].lfu_count < 0) {
         c->blocks[idx].lfu_count = c->lfu_init_value;
-    } else if (sizeof(c->blocks[idx].lfu_count) * BYTE_SIZE < 
-        c->lfu_count_size){
+    } else if (c->blocks[idx].lfu_count < c->lfu_max_count) {
         ++c->blocks[idx].lfu_count;
     }
     int i;
@@ -166,7 +164,6 @@ full_cache_link_elem_lru(
     int *first,
     int *last)
 {
-    fprintf(stderr, "LRU LINK\n");
     full_cache_link_elem_first(c, idx, first, last);
 }
 
@@ -202,20 +199,18 @@ static AbstractMemory *
 full_cache_free(AbstractMemory *m)
 {
     if (m) {
-        fprintf(stderr, "Free\n");
         FullCache *c = (FullCache *) m;
-        fprintf(stderr, "Free\n");
-        c->mem = c->mem->ops->free(c->mem);
-        fprintf(stderr, "Free\n");
         int i;
         for (i = 0; i < c->block_count; i++) {
+            if (c->blocks[i].dirty) {
+                c->full_ops.finalize(c, &c->blocks[i]);
+            }
             free(c->blocks[i].mem);
+            c->blocks[i].mem = NULL;
         }
-        fprintf(stderr, "Free\n");
         free(c->blocks);
-        fprintf(stderr, "Free\n");
+        c->blocks = NULL;
         free(c);
-        fprintf(stderr, "Free\n");
     }
     return NULL;
 }
@@ -252,8 +247,8 @@ full_cache_place(FullCache *c, memaddr_t aligned_addr)
         return b;
     }
     index = c->full_ops.get_used(c);
-    full_cache_unlink_elem(c, index, &c->used_first, &c->used_last);
-    c->full_ops.link_elem(c, index, &c->used_first, &c->used_last);
+    //full_cache_unlink_elem(c, index, &c->used_first, &c->used_last);
+    //c->full_ops.link_elem(c, index, &c->used_first, &c->used_last);
     b = &c->blocks[index];
     if (b->addr != -1) {
         c->full_ops.finalize(c, b);
@@ -407,7 +402,7 @@ full_cache_create(
         error_invalid("full_cache_create", buf);
     }
     c->mem = mem;
-    int r;
+    int r, i;
     
     // стратегии замещения:
     const char *replace = config_get(cfg, make_param_name(buf, 
@@ -447,6 +442,11 @@ full_cache_create(
             error_undefined("full_cache_create", buf);
         } else if (r < 0 || c->lfu_aging_shift <= 0) {
             error_invalid("full_cache_create", buf);
+        }
+        
+        for (i = 0; i < c->lfu_count_size; i++) {
+            ++c->lfu_max_count;
+            c->lfu_max_count <<= 1;
         }
     } else if (!strcmp(replace, "lru")) {
         c->full_ops.link_elem = &full_cache_link_elem_lru;
@@ -489,7 +489,7 @@ full_cache_create(
     c->block_count = c->cache_size / c->block_size;
     c->blocks = (FullCacheBlock *) calloc(c->block_count, 
                                             sizeof(c->blocks[0]));
-    int i;
+
     for (i = 0; i < c->block_count; i++) {
         c->blocks[i].mem = (MemoryCell *) calloc(c->block_size, 
                                       sizeof(c->blocks[i].mem[0]));

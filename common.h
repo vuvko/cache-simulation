@@ -31,6 +31,5 @@ char *make_param_name(
     const char *name);
 void error_open(char *func, const char *file);
 void error_undefined(const char *func, const char *param);
-void error_invalid_chr(char *func, const char *file, int line, char chr);
 void error_invalid(const char *func, const char *param);
 #endif

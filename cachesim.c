@@ -17,25 +17,35 @@ main(int argc, char *argv[])
     int i, idx, cfg_i = 0, log_i = 0, dmp = 0, stat = 0, en_cache = 1;
     char *params[] = {
         "--disable-cache",
+        "-d",
         "--dump-memory",
+        "-m",
         "--log",
-        "--statistics"
+        "-l",
+        "--statistics",
+        "-s"
     };
     for (i = 1; i < argc; i++) {
         if ((idx = arrayidx_str(argv[i], params, 
-            sizeof(params) / sizeof(params[0]))) > 0) {
+            sizeof(params) / sizeof(params[0]))) >= 0) {
             switch (idx) {
                 case 0:
+                case 1:
                     en_cache = 0;
                     break;
-                case 1:
+                case 2:
+                case 3:
                     dmp = 1;
                     break;
-                case 2:
+                case 4:
+                case 5:
                     log_i = ++i;
                     break;
-                default:
+                case 6:
+                case 7:
                     stat = 1;
+                    break;
+                default:
                     break;
             }
         } else if (!cfg_i) {
@@ -45,7 +55,6 @@ main(int argc, char *argv[])
             return 1;
         }
     }
-    fprintf(stderr, "Config\n");
     ConfigFile *cfg = config_read(argv[cfg_i]);
     if (!cfg) {
         fprintf(stderr, "no cfg\n");
@@ -76,24 +85,6 @@ main(int argc, char *argv[])
     } else {
         cache = mem;
     }
-    //---
-    Trace *t = trace_open("trace.fire", NULL);
-    if (!t) {
-        fprintf(stderr, "no trace");
-        return 1;
-    }
-    TraceStep *ts = NULL;
-    /*
-    while (trace_next(t)) {
-        ts = trace_get(t);
-        if (ts->mem == 'D') {
-            cache->ops->reveal(cache, ts->addr, ts->size, ts->value);
-        } else if (ts->op == 'I') {
-            mem->ops->reveal(mem, ts->addr, ts->size, ts->value);
-        }
-    }*/
-    t = trace_close(t);
-    //---
     FILE *log_f = NULL;
     if (log_i > 0) {
         log_f = fopen(argv[log_i], "w");
@@ -101,15 +92,15 @@ main(int argc, char *argv[])
             fprintf(stderr, "Can't open log file.\n");
         }
     }
-    t = trace_open("trace.trc", log_f);
+    Trace *t = trace_open("trace.trc", log_f);
     if (!t) {
         fprintf(stderr, "no trace");
         return 1;
     }
-    ts = NULL;
+    TraceStep *ts = NULL;
     while (trace_next(t) > 0) {
         ts = trace_get(t);
-        fprintf(stderr, "|%c%c %x %d\n", ts->op, ts->mem, ts->addr, ts->size);
+        cache->ops->reveal(cache, ts->addr, ts->size, ts->value);
         if (ts->mem == 'D') {
             if (ts->op == 'W') {
                 //mem->ops->write(mem, ts->addr, ts->size, ts->value);
@@ -127,26 +118,27 @@ main(int argc, char *argv[])
                 cache->ops->read(cache, ts->addr, ts->size, ts->value);
             }
         }
+        if (ts->addr == 0xFF8 && ts->size == 4) {
+            //return 0;
+        }
+    }
+    if (en_cache) {
+        cache = cache->ops->free(cache);
+    } else {
+        cache = NULL;
     }
     if (stat) {
-        statistics_print(info, stderr);
+        statistics_print(info, log_f);
     }
     if (dmp) {
-        fprintf(stderr, "ALIVE!!!\n");
-        FILE *dmp = fopen("dupm.dmp", "w");
-        fprintf(stderr, "ALIVE!!!\n");
+        FILE *dmp = fopen("dump.dmp", "w");
         mem_dump(mem, dmp);
-        fprintf(stderr, "ALIVE!!!\n");
         fclose(dmp);
-        fprintf(stderr, "ALIVE!!!\n");
     }
     
     t = trace_close(t);
-    fprintf(stderr, "ALIVE!!!\n");
-    cache = cache->ops->free(cache);
-    fprintf(stderr, "ALIVE!!!\n");
+    mem = mem->ops->free(mem);
     info = statistics_free(info);
-    fprintf(stderr, "ALIVE!!!\n");
     cfg = config_free(cfg);
     
     if (log_f) {

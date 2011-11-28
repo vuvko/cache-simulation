@@ -29,6 +29,8 @@ memory_free(AbstractMemory *a)
         fprintf(stderr, "Memfree %x %d\n", m->mem[m->memory_size - 1].value, m->mem[m->memory_size - 1].flags);
         free(m->mem);
         fprintf(stderr, "Memfree\n");
+        m->mem = NULL;
+        fprintf(stderr, "Memfree\n");
         free(m);
         fprintf(stderr, "Memfree\n");
     }
@@ -46,6 +48,7 @@ memory_read(
     statistics_add_counter(m->b.info, (size + m->memory_width - 1) / 
                            m->memory_width * m->memory_read_time);
 
+    int tmp_size = size;
     for (; size; ++addr, --size, ++dst) {
         *dst = m->mem[addr];
     }
@@ -155,18 +158,15 @@ mem_dump(AbstractMemory *a, FILE *f)
         out = f;
     }
     int i, j;
-    char *str = (char *) calloc(9, sizeof(*str));
-    for (i = 0; i < m->memory_size; i += 16) {
-        fprintf(out, "%08x", i);
+    for (i = 0; i < m->memory_size; i += BLOCK_SIZE) {
+        fprintf(out, "%08X", i);
         for (j = 0; j < BLOCK_SIZE; j++) {
             if (m->mem[i + j].flags) {
-                sprintf(str, "%08X", m->mem[i + j].value);
-                fprintf(out, " %c%c", str[6], str[7]);
+                fprintf(out, " %02X", m->mem[i + j].value);
             } else {
                 fprintf(out, " ??");
             }
         }
         fprintf(out, "\n");
     }
-    free(str);
 }

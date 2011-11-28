@@ -31,15 +31,23 @@ ConfigFile *config_free(ConfigFile *config)
 {
     if (config != NULL) {
         int i;
-        for (i = 0; i < config->used; i++) {
+        for (i = 0; i < config->alc; i++) {
             free(config->v[i].name);
             free(config->v[i].value);
         }
         free(config->v);
+        config->v = NULL;
         free(config);
         config = NULL;
     }
     return NULL;
+}
+
+void
+error_invalid_chr(const char *file, int line, char chr)
+{
+    fprintf(stderr, "config_read: %s: on line %d - invalid \
+    character '%c'\n", file, line, chr);
 }
 
 ConfigFile *
@@ -47,11 +55,10 @@ config_read(const char *path)
 {
     FILE *in = NULL;
     ConfigFile *cfg = NULL;
-    char *func_name = strdup("config_read");
     char *k = NULL, *v = NULL, *str = NULL;
     if (!(in = fopen(path, "r"))) {
         //fprintf(stderr, "Unable to open config file\n");
-        error_open(func_name, path);
+        error_open("config_read", path);
         goto fail;
     }
     cfg = (ConfigFile *) calloc(1, sizeof(*cfg));
@@ -83,14 +90,14 @@ config_read(const char *path)
         v = k;
         if (!isalpha(*v) && *v != '_') {
             //fprintf(stderr, "Error while parsing config file1\n");
-            error_invalid_chr(func_name, path, line, *v);
+            error_invalid_chr(path, line, *v);
             goto fail;
         }
         for (; isalpha(*v) || isdigit(*v) || 
                *v == '_' || *v == '-'; v++){}
         if (!isspace(*v) && *v != '=') {
             //fprintf(stderr, "Error while parsing config file2\n");
-            error_invalid_chr(func_name, path, line, *v);
+            error_invalid_chr(path, line, *v);
             goto fail;
         }
         if (*v != '=') {
@@ -129,7 +136,6 @@ config_read(const char *path)
     fclose(in);
     in = NULL;
     qsort(cfg->v, cfg->used, sizeof(cfg->v[0]), sort_func);
-    free(func_name);
     
     return cfg;
 fail:
@@ -138,7 +144,6 @@ fail:
         in = NULL;
     }
     cfg = config_free(cfg);
-    free(func_name);
     free(str);
     return NULL;
 }

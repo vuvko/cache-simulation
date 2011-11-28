@@ -44,12 +44,15 @@ direct_cache_free(AbstractMemory *m)
 {
     if (m) {
         DirectCache *c = (DirectCache *) m;
-        c->mem = c->mem->ops->free(c->mem);
         int i;
         for (i = 0; i < c->block_count; i++) {
+            if (c->blocks[i].dirty) {
+                c->direct_ops.finalize(c, &c->blocks[i]);
+            }
             free(c->blocks[i].mem);
         }
         free(c->blocks);
+        c->blocks = NULL;
         free(c);
     }
     return NULL;
@@ -85,6 +88,7 @@ direct_cache_read(
     int size, 
     MemoryCell *dst)
 {
+    
     DirectCache *c = (DirectCache*) m;
     memaddr_t aligned_addr = addr & -c->block_size;
     statistics_add_counter(c->b.info, c->cache_read_time);
@@ -97,8 +101,10 @@ direct_cache_read(
     } else {
         statistics_add_hit_counter(c->b.info);
     }
+    fprintf(stderr, "|%d %02x%02x%02x%02x\n", size, dst[0].value, dst[1].value, dst[2].value, dst[3].value);
     memcpy(dst, b->mem + (addr - aligned_addr), 
         size * sizeof(b->mem[0]));
+    fprintf(stderr, "%X %X %X %02x%02x%02x%02x\n", addr, aligned_addr, addr - aligned_addr, b->mem[0].value, b->mem[1].value, b->mem[2].value, b->mem[3].value);
 }
 
 static void

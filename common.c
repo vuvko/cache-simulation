@@ -45,15 +45,11 @@ int
 arrayidx_str(char *value, char **array, int size)
 {
     int i;
-    fprintf(stderr, "enter\n");
     for (i = 0; i < size; i++) {
-        fprintf(stderr, "%d\n", i);
         if (!strcmp(value, array[i])) {
-            fprintf(stderr, "yep %d\n", i);
             return i;
         }
     }
-    fprintf(stderr, "no\n");
     return -1;
 }
 
@@ -83,13 +79,5 @@ void
 error_invalid(const char *func, const char *param)
 {
     fprintf(stderr, "%s: configuration parameter '%s' value is invalid\n", func, param);
-    exit(1);
-}
-
-void
-error_invalid_chr(char *func, const char *file, int line, char chr)
-{
-    fprintf(stderr, "%s: %s:on line %d - invalid \
-    character '%c'\n", func, file, line, chr);
     exit(1);
 }

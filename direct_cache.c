@@ -88,11 +88,11 @@ direct_cache_read(
     int size, 
     MemoryCell *dst)
 {
-    
     DirectCache *c = (DirectCache*) m;
     memaddr_t aligned_addr = addr & -c->block_size;
     statistics_add_counter(c->b.info, c->cache_read_time);
     statistics_add_read(c->b.info);
+    c->mem->ops->reveal(c->mem, addr, size, dst);
     DirectCacheBlock *b = direct_cache_find(c, aligned_addr);
     if (!b) {
         b = direct_cache_place(c, aligned_addr);
@@ -101,10 +101,8 @@ direct_cache_read(
     } else {
         statistics_add_hit_counter(c->b.info);
     }
-    fprintf(stderr, "|%d %02x%02x%02x%02x\n", size, dst[0].value, dst[1].value, dst[2].value, dst[3].value);
     memcpy(dst, b->mem + (addr - aligned_addr), 
         size * sizeof(b->mem[0]));
-    fprintf(stderr, "%X %X %X %02x%02x%02x%02x\n", addr, aligned_addr, addr - aligned_addr, b->mem[0].value, b->mem[1].value, b->mem[2].value, b->mem[3].value);
 }
 
 static void
@@ -119,13 +117,10 @@ direct_cache_wt_write(
     statistics_add_counter(c->b.info, c->cache_write_time);
     statistics_add_write(c->b.info);
     DirectCacheBlock *b = direct_cache_find(c, aligned_addr);
-    if (!b) {
-        b = direct_cache_place(c, aligned_addr);
-        b->addr = aligned_addr;
-        c->mem->ops->read(c->mem, aligned_addr, c->block_size, b->mem);
+    if (b) {
+        memcpy(b->mem + (addr - aligned_addr), src, 
+            size * sizeof(b->mem[0]));
     }
-    memcpy(b->mem + (addr - aligned_addr), src, 
-        size * sizeof(b->mem[0]));
     c->mem->ops->write(c->mem, addr, size, src);
 }
 

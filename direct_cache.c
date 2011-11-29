@@ -46,9 +46,7 @@ direct_cache_free(AbstractMemory *m)
         DirectCache *c = (DirectCache *) m;
         int i;
         for (i = 0; i < c->block_count; i++) {
-            if (c->blocks[i].dirty) {
-                c->direct_ops.finalize(c, &c->blocks[i]);
-            }
+            c->direct_ops.finalize(c, &c->blocks[i]);
             free(c->blocks[i].mem);
         }
         free(c->blocks);
@@ -173,8 +171,11 @@ static void
 direct_cache_wb_finalize(DirectCache *c, DirectCacheBlock *b)
 {
     // записываем грязный блок в память...
-    c->mem->ops->write(c->mem, b->addr, c->block_size, b->mem);
-    b->dirty = 0;
+    if (b->dirty) {
+        c->mem->ops->write(c->mem, b->addr, c->block_size, b->mem);
+        b->dirty = 0;
+        statistics_add_write_back_counter(c->b.info);
+    }
 }
 
 static AbstractMemoryOps direct_cache_wt_ops =

@@ -43,7 +43,6 @@ memory_read(
     statistics_add_counter(m->b.info, (size + m->memory_width - 1) / 
                            m->memory_width * m->memory_read_time);
 
-    int tmp_size = size;
     for (; size; ++addr, --size, ++dst) {
         *dst = m->mem[addr];
     }

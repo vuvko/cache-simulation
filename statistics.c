@@ -45,9 +45,6 @@ statistics_free(StatisticsInfo *info)
 StatisticsInfo *
 statistics_create(ConfigFile *cfg)
 {
-    if (!cfg) {
-        return NULL;
-    }
     StatisticsInfo *info = (StatisticsInfo *) calloc(1, sizeof(*info));
     // как быть с выбором стратегии тут?
     // кеш пусть сам ставит...

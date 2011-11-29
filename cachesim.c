@@ -105,7 +105,7 @@ main(int argc, char *argv[])
         return 1;
     }
     TraceStep *ts = NULL;
-    while (trace_next(t) > 0) {
+    while (trace_next(t) > 0) {;
         ts = trace_get(t);
         cache->ops->reveal(cache, ts->addr, ts->size, ts->value);
         if (ts->mem == 'D') {
@@ -124,9 +124,6 @@ main(int argc, char *argv[])
                 //mem->ops->read(mem, ts->addr, ts->size, ts->value);
                 cache->ops->read(cache, ts->addr, ts->size, ts->value);
             }
-        }
-        if (ts->addr == 0xFF8 && ts->size == 4) {
-            //return 0;
         }
     }
     if (en_cache) {
@@ -152,6 +149,7 @@ main(int argc, char *argv[])
     
     t = trace_close(t);
     mem = mem->ops->free(mem);
+    r = r->ops->free(r);
     info = statistics_free(info);
     cfg = config_free(cfg);
     

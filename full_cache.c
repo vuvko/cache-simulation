@@ -207,9 +207,7 @@ full_cache_free(AbstractMemory *m)
         FullCache *c = (FullCache *) m;
         int i;
         for (i = 0; i < c->block_count; i++) {
-            if (c->blocks[i].dirty) {
-                c->full_ops.finalize(c, &c->blocks[i]);
-            }
+            c->full_ops.finalize(c, &c->blocks[i]);
             free(c->blocks[i].mem);
             c->blocks[i].mem = NULL;
         }
@@ -356,9 +354,11 @@ static void
 full_cache_wb_finalize(FullCache *c, FullCacheBlock *b)
 {
     // записываем грязный блок в память...
-    c->mem->ops->write(c->mem, b->addr, c->block_size, b->mem);
-    b->dirty = 0;
-    statistics_add_write_back_counter(c->b.info);
+    if (b->dirty) {
+        c->mem->ops->write(c->mem, b->addr, c->block_size, b->mem);
+        b->dirty = 0;
+        statistics_add_write_back_counter(c->b.info);
+    }
 }
 
 static AbstractMemoryOps full_cache_wt_ops =

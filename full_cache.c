@@ -137,6 +137,11 @@ full_cache_link_elem_lfu(
     } else if (c->blocks[idx].lfu_count < c->lfu_max_count) {
         ++c->blocks[idx].lfu_count;
     }
+    if (*first < 0) {
+        *first = idx;
+        *last = idx;
+        return;
+    }
     int i;
     for (i = *first; i >= 0 &&
         c->blocks[i].lfu_count > c->blocks[idx].lfu_count;
@@ -272,14 +277,15 @@ full_cache_read(
     c->mem->ops->reveal(c->mem, addr, size, dst);
     FullCacheBlock *b = full_cache_find(c, aligned_addr);
     if (!b) {
+        
         b = full_cache_place(c, aligned_addr);
-        b->addr = aligned_addr;
-        c->mem->ops->read(c->mem, aligned_addr, c->block_size, b->mem);
-    } else {
-        statistics_add_hit_counter(c->b.info);
-    }
+        b->addr = aligned_addr;/*
+        c->mem->ops->read(c->mem, aligned_addr, c->block_size, b->mem);*/
+    } else {/*
+        statistics_add_hit_counter(c->b.info);*/
+    }/*
     memcpy(dst, b->mem + (addr - aligned_addr), 
-        size * sizeof(b->mem[0]));
+        size * sizeof(b->mem[0]));*/
 }
 
 static void

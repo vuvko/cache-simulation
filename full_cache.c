@@ -96,7 +96,9 @@ full_cache_link_elem_first(
     int *last)
 {
     c->blocks[idx].next_idx = *first;
-    c->blocks[*first].prev_idx = idx;
+    if (*first >= 0) {
+        c->blocks[*first].prev_idx = idx;
+    }
     *first = idx;
     if (*last < 0) {
         *last = idx;
@@ -250,8 +252,10 @@ full_cache_place(FullCache *c, memaddr_t aligned_addr)
         return b;
     }
     index = c->full_ops.get_used(c);
-    full_cache_unlink_elem(c, index, &c->used_first, &c->used_last);
-    c->full_ops.link_elem(c, index, &c->used_first, &c->used_last);
+    if (index != c->used_first) {
+        full_cache_unlink_elem(c, index, &c->used_first, &c->used_last);
+        c->full_ops.link_elem(c, index, &c->used_first, &c->used_last);
+    }
     b = &c->blocks[index];
     if (b->addr != -1) {
         c->full_ops.finalize(c, b);
@@ -277,13 +281,13 @@ full_cache_read(
     if (!b) {
         
         b = full_cache_place(c, aligned_addr);
-        b->addr = aligned_addr;/*
-        c->mem->ops->read(c->mem, aligned_addr, c->block_size, b->mem);*/
-    } else {/*
-        statistics_add_hit_counter(c->b.info);*/
-    }/*
+        b->addr = aligned_addr;
+        c->mem->ops->read(c->mem, aligned_addr, c->block_size, b->mem);
+    } else {
+        statistics_add_hit_counter(c->b.info);
+    }
     memcpy(dst, b->mem + (addr - aligned_addr), 
-        size * sizeof(b->mem[0]));*/
+        size * sizeof(b->mem[0]));
 }
 
 static void

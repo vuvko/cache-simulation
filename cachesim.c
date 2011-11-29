@@ -108,6 +108,10 @@ main(int argc, char *argv[])
     while (trace_next(t) > 0) {;
         ts = trace_get(t);
         cache->ops->reveal(cache, ts->addr, ts->size, ts->value);
+        fprintf(stderr, "%c%c %x %d %02x%02x%02x %d%d%d\n", 
+            ts->op, ts->mem, ts->addr, ts->size,
+            ts->value[0].value, ts->value[1].value, ts->value[2].value, 
+            ts->value[0].flags, ts->value[1].flags, ts->value[2].flags);
         if (ts->mem == 'D') {
             if (ts->op == 'W') {
                 //mem->ops->write(mem, ts->addr, ts->size, ts->value);

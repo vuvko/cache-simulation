@@ -299,10 +299,10 @@ full_cache_wt_write(
 {
     FullCache *c = (FullCache*) m;
     memaddr_t aligned_addr = addr & -c->block_size;
-    statistics_add_counter(c->b.info, c->cache_write_time);
     statistics_add_write(c->b.info);
     FullCacheBlock *b = full_cache_find(c, aligned_addr);
     if (b) {
+        statistics_add_counter(c->b.info, c->cache_write_time);
         memcpy(b->mem + (addr - aligned_addr), src, 
             size * sizeof(b->mem[0]));
     }

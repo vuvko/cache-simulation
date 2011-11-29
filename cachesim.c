@@ -135,9 +135,6 @@ main(int argc, char *argv[])
     } else {
         cache = NULL;
     }
-    if (stat) {
-        statistics_print(info, log_f);
-    }
     if (dmp) {
         FILE *dmp;
         if (dmp_i > 0) {
@@ -149,6 +146,9 @@ main(int argc, char *argv[])
         if (dmp_i > 0) {
             fclose(dmp);
         }
+    }
+    if (stat) {
+        statistics_print(info, log_f);
     }
     
     t = trace_close(t);

@@ -224,40 +224,40 @@ full_cache_free(AbstractMemory *m)
 static FullCacheBlock *
 full_cache_find(FullCache *c, memaddr_t aligned_addr)
 {
-    int index;
-    for (index = c->used_first; index >= 0 && 
-         c->blocks[index].addr != aligned_addr; 
-         index = c->blocks[index].next_idx) {}
-    if (index < 0) {
+    int idx;
+    for (idx = c->used_first; idx >= 0 && 
+         c->blocks[idx].addr != aligned_addr; 
+         idx = c->blocks[idx].next_idx) {}
+    if (idx < 0) {
         return NULL;
     }
-    if (index != c->used_first) {
+    if (idx != c->used_first) {
         // unlink elem
-        full_cache_unlink_elem(c, index, &c->used_first, &c->used_last);
+        full_cache_unlink_elem(c, idx, &c->used_first, &c->used_last);
         // link elem
-        c->full_ops.link_elem(c, index, &c->used_first, &c->used_last);
+        c->full_ops.link_elem(c, idx, &c->used_first, &c->used_last);
     }
-    return &c->blocks[index];
+    return &c->blocks[idx];
 }
 
 static FullCacheBlock *
 full_cache_place(FullCache *c, memaddr_t aligned_addr)
 {
     FullCacheBlock *b;
-    int index;
+    int idx;
     if (c->free_first >= 0) {
-        index = c->free_first;
-        b = &c->blocks[index];
-        full_cache_unlink_elem(c, index, &c->free_first, &c->free_last);
-        c->full_ops.link_elem(c, index, &c->used_first, &c->used_last);
+        idx = c->free_first;
+        b = &c->blocks[idx];
+        full_cache_unlink_elem(c, idx, &c->free_first, &c->free_last);
+        c->full_ops.link_elem(c, idx, &c->used_first, &c->used_last);
         return b;
     }
-    index = c->full_ops.get_used(c);
-    if (index != c->used_first) {
-        full_cache_unlink_elem(c, index, &c->used_first, &c->used_last);
-        c->full_ops.link_elem(c, index, &c->used_first, &c->used_last);
+    idx = c->full_ops.get_used(c);
+    if (idx != c->used_first) {
+        full_cache_unlink_elem(c, idx, &c->used_first, &c->used_last);
+        c->full_ops.link_elem(c, idx, &c->used_first, &c->used_last);
     }
-    b = &c->blocks[index];
+    b = &c->blocks[idx];
     if (b->addr != -1) {
         c->full_ops.finalize(c, b);
         b->addr = -1;

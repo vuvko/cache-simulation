@@ -59,18 +59,18 @@ direct_cache_free(AbstractMemory *m)
 static DirectCacheBlock *
 direct_cache_find(DirectCache *c, memaddr_t aligned_addr)
 {
-    int index = (aligned_addr / c->block_size) % c->block_count;
-    if (c->blocks[index].addr != aligned_addr) {
+    int idx = (aligned_addr / c->block_size) % c->block_count;
+    if (c->blocks[idx].addr != aligned_addr) {
         return NULL;
     }
-    return &c->blocks[index];
+    return &c->blocks[idx];
 }
 
 static DirectCacheBlock *
 direct_cache_place(DirectCache *c, memaddr_t aligned_addr)
 {
-    int index = (aligned_addr / c->block_size) % c->block_count;
-    DirectCacheBlock *b = &c->blocks[index];
+    int idx = (aligned_addr / c->block_size) % c->block_count;
+    DirectCacheBlock *b = &c->blocks[idx];
     if (b->addr != -1) {
         c->direct_ops.finalize(c, b);
         b->addr = -1;

@@ -50,6 +50,12 @@ error_invalid_chr(const char *file, int line, char chr)
     character '%c'\n", file, line, chr);
 }
 
+static void
+parse_error(const char *file, int line)
+{
+    fprintf(stderr, "Syntax error in line %d of %s\n", line, file);
+}
+
 ConfigFile *
 config_read(const char *path)
 {
@@ -90,14 +96,16 @@ config_read(const char *path)
         v = k;
         if (!isalpha(*v) && *v != '_') {
             //fprintf(stderr, "Error while parsing config file1\n");
-            error_invalid_chr(path, line, *v);
+            //error_invalid_chr(path, line, *v);
+            parse_error(path, line);
             goto fail;
         }
         for (; isalpha(*v) || isdigit(*v) || 
                *v == '_' || *v == '-'; v++){}
         if (!isspace(*v) && *v != '=') {
             //fprintf(stderr, "Error while parsing config file2\n");
-            error_invalid_chr(path, line, *v);
+            //error_invalid_chr(path, line, *v);
+            parse_error(path, line);
             goto fail;
         }
         if (*v != '=') {
@@ -105,8 +113,9 @@ config_read(const char *path)
             v++;
             for (; isspace(*v); v++){}
             if (*v != '=') {
-                fprintf(stderr, "Error while parsing config file3\n");
+                //fprintf(stderr, "Error while parsing config file3\n");
                 //error_undefined(func_name, k);
+                parse_error(path, line);
                 goto fail;
             }
         } else {
@@ -114,11 +123,13 @@ config_read(const char *path)
         }
         v++;
         for (; isspace(*v); v++){}
+        /*
         if (*v == '\0') {
-            fprintf(stderr, "Error while parsing config file4\n");
+            //fprintf(stderr, "Error while parsing config file4\n");
             //error_undefined(func_name, k);
+            parse_error(path, line);
             goto fail;
-        }
+        }*/
         char *cur = v;
         for (; *cur != '\n' && *cur != '\0'; cur++){}
         *cur = '\0';
@@ -136,6 +147,14 @@ config_read(const char *path)
     fclose(in);
     in = NULL;
     qsort(cfg->v, cfg->used, sizeof(cfg->v[0]), sort_func);
+    int i;
+    for (i = 1; i < cfg->used; i++) {
+        if (!strcmp(cfg->v[i].name, cfg->v[i - 1].name)) {
+            fprintf(stderr, "Duplicate parameter %s in %s\n", 
+                cfg->v[i].name, path);
+            goto fail;
+        }
+    }
     
     return cfg;
 fail:
@@ -190,4 +209,19 @@ config_get_int(
     }
     *p_int = num;
     return 1;
+}
+
+void
+config_print(ConfigFile *config, FILE *f)
+{
+    if (!config) {
+        return;
+    }
+    int i;
+    if (!f) {
+        f = stdout;
+    }
+    for (i = 0; i < config->used; i++) {
+        fprintf(f, "%s=%s\n", config->v[i].name, config->v[i].value);
+    }
 }

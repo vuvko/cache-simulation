@@ -64,7 +64,7 @@ make_param_name(char *buf, int size, const char *prefix, const char *name)
 void
 error_open(char *func, const char *file)
 {
-    fprintf(stderr, "%s: Cannot open file %s\n", func, file);
+    fprintf(stderr, "%s: Failed to open %s for reading\n", func, file);
     exit(1);
 }
 

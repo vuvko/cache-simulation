@@ -89,7 +89,6 @@ direct_cache_read(
     DirectCache *c = (DirectCache*) m;
     memaddr_t aligned_addr = addr & -c->block_size;
     statistics_add_counter(c->b.info, c->cache_read_time);
-    statistics_add_read(c->b.info);
     c->mem->ops->reveal(c->mem, addr, size, dst);
     DirectCacheBlock *b = direct_cache_find(c, aligned_addr);
     if (!b) {
@@ -112,7 +111,6 @@ direct_cache_wt_write(
 {
     DirectCache *c = (DirectCache*) m;
     memaddr_t aligned_addr = addr & -c->block_size;
-    statistics_add_write(c->b.info);
     DirectCacheBlock *b = direct_cache_find(c, aligned_addr);
     if (b) {
         statistics_add_counter(c->b.info, c->cache_write_time);
@@ -132,7 +130,6 @@ direct_cache_wb_write(
     DirectCache *c = (DirectCache*) m;
     memaddr_t aligned_addr = addr & -c->block_size;
     statistics_add_counter(c->b.info, c->cache_write_time);
-    statistics_add_write(c->b.info);
     DirectCacheBlock *b = direct_cache_find(c, aligned_addr);
     if (!b) {
         b = direct_cache_place(c, aligned_addr);

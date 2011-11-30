@@ -131,7 +131,7 @@ full_cache_link_elem_lfu(
     int *first,
     int *last)
 {
-    if (c->b.info->read_counter % c->lfu_aging_interval) {
+    if (c->b.info->read_counter % c->lfu_aging_interval == 0) {
         full_cache_aging(c);
     }
     if (c->blocks[idx].lfu_count < 0) {
@@ -183,7 +183,7 @@ full_cache_get_used_rnd(FullCache *c)
 int
 full_cache_get_used_lfu(FullCache *c)
 {
-    if (c->b.info->read_counter % c->lfu_aging_interval) {
+    if (c->b.info->read_counter % c->lfu_aging_interval == 0) {
         full_cache_aging(c);
     }
     int idx, cnt, least = c->blocks[c->used_last].lfu_count;
@@ -193,6 +193,7 @@ full_cache_get_used_lfu(FullCache *c)
     cnt = c->r->ops->next(c->r, cnt);
     for (idx = c->used_last; cnt > 0; 
         cnt--, idx = c->blocks[idx].prev_idx) {}
+    c->blocks[idx].lfu_count = -1;
     return idx;
 }
 
@@ -275,11 +276,9 @@ full_cache_read(
     FullCache *c = (FullCache*) m;
     memaddr_t aligned_addr = addr & -c->block_size;
     statistics_add_counter(c->b.info, c->cache_read_time);
-    statistics_add_read(c->b.info);
     c->mem->ops->reveal(c->mem, addr, size, dst);
     FullCacheBlock *b = full_cache_find(c, aligned_addr);
     if (!b) {
-        
         b = full_cache_place(c, aligned_addr);
         b->addr = aligned_addr;
         c->mem->ops->read(c->mem, aligned_addr, c->block_size, b->mem);
@@ -299,7 +298,6 @@ full_cache_wt_write(
 {
     FullCache *c = (FullCache*) m;
     memaddr_t aligned_addr = addr & -c->block_size;
-    statistics_add_write(c->b.info);
     FullCacheBlock *b = full_cache_find(c, aligned_addr);
     if (b) {
         statistics_add_counter(c->b.info, c->cache_write_time);
@@ -319,7 +317,6 @@ full_cache_wb_write(
     FullCache *c = (FullCache*) m;
     memaddr_t aligned_addr = addr & -c->block_size;
     statistics_add_counter(c->b.info, c->cache_write_time);
-    statistics_add_write(c->b.info);
     FullCacheBlock *b = full_cache_find(c, aligned_addr);
     if (!b) {
         b = full_cache_place(c, aligned_addr);

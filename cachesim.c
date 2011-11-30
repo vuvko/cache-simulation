@@ -186,15 +186,15 @@ main(int argc, char *argv[])
         cache = NULL;
     }
     if (dmp) {
-        FILE *dmp;
+        FILE *dmp_f;
         if (dmp_i > 0) {
-            dmp = fopen(argv[dmp_i], "w");
+            dmp_f = fopen(argv[dmp_i], "w");
         } else {
-            dmp = stdout;
+            dmp_f = stdout;
         }
-        mem_dump(mem, dmp);
+        mem_dump(mem, dmp_f);
         if (dmp_i > 0) {
-            fclose(dmp);
+            fclose(dmp_f);
         }
     }
     if (stat) {

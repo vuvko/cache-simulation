@@ -98,13 +98,13 @@ main(int argc, char *argv[])
                 break;
             default:
                 fprintf(stderr, "Invalid arguments\n");
-                return 0;
+                return 1;
                 break;
         }
     }
     ConfigFile *cfg = config_read(argv[argc - 1]);
     if (!cfg) {
-        fprintf(stderr, "no cfg\n");
+        //fprintf(stderr, "no cfg\n");
         return 1;
     }
     if (print_cfg) {
@@ -114,24 +114,24 @@ main(int argc, char *argv[])
     }
     StatisticsInfo *info = statistics_create(cfg);
     if (!info) {
-        fprintf(stderr, "no info\n");
+        //fprintf(stderr, "no info\n");
         return 1;
     }
     AbstractMemory *mem = memory_create(cfg, "", info);
     if (!mem) {
-        fprintf(stderr, "no mem\n");
+        //fprintf(stderr, "no mem\n");
         return 1;
     }
     Random *r = random_create(cfg);
     if (!r) {
-        fprintf(stderr, "no random\n");
+        //fprintf(stderr, "no random\n");
         return 1;
     }
     AbstractMemory *cache;
     if (en_cache) {
         cache = cache_create(cfg, "", info, mem, r);
         if (!cache) {
-            fprintf(stderr, "no cache\n");
+            //fprintf(stderr, "no cache\n");
             return 1;
         }
     } else {
@@ -144,15 +144,16 @@ main(int argc, char *argv[])
             fprintf(stderr, "Can't open log file.\n");
         }
     }
-    Trace *t = trace_open("trace.trc", log_f);
+    //Trace *t = trace_open("trace.trc", log_f);
+    Trace *t = trace_open(NULL, log_f);
     if (!t) {
-        fprintf(stderr, "no trace");
+        //fprintf(stderr, "no trace");
         return 1;
     }
     TraceStep *ts = NULL;
     while (trace_next(t) > 0) {;
         ts = trace_get(t);
-        //cache->ops->reveal(cache, ts->addr, ts->size, ts->value);
+        cache->ops->reveal(cache, ts->addr, ts->size, ts->value);
         /*
         fprintf(stderr, "%c%c %x %d %02x%02x%02x %d%d%d\n", 
             ts->op, ts->mem, ts->addr, ts->size,

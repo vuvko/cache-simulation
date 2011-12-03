@@ -13,12 +13,12 @@ typedef struct ConfigEntry
     char *value;
 } ConfigEntry;
 
-typedef struct ConfigFile
+struct ConfigFile
 {
     ConfigEntry *v;
     int used;
     int alc;
-} ConfigFile;
+};
 
 int 
 sort_func(const void *p1, const void *p2) {
@@ -31,7 +31,7 @@ ConfigFile *config_free(ConfigFile *config)
 {
     if (config != NULL) {
         int i;
-        for (i = 0; i < config->alc; i++) {
+        for (i = 0; i < config->used; i++) {
             free(config->v[i].name);
             free(config->v[i].value);
         }
@@ -222,6 +222,6 @@ config_print(ConfigFile *config, FILE *f)
         f = stdout;
     }
     for (i = 0; i < config->used; i++) {
-        fprintf(f, "%s=%s\n", config->v[i].name, config->v[i].value);
+        fprintf(f, "%s = \"%s\"\n", config->v[i].name, config->v[i].value);
     }
 }

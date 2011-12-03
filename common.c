@@ -6,13 +6,19 @@
 char *
 getline2(FILE *fin)
 {
-    char *str, c;
+    char *str, *tmp, c;
     unsigned int len = 0, size = MIN_STR_SIZE;
     str = (char *) calloc(size, sizeof(*str));
     while ((c = fgetc(fin)) != EOF && c != '\n') {
         str[len++] = c;
         if (len >= size) {
-            str = (char *) realloc(str, (size *= 2) * sizeof(*str));
+            tmp = (char *) realloc(str, (size *= 2) * sizeof(*str));
+            if (tmp) {
+                str = tmp;
+            } else {
+                fprintf(stderr, "No memory alloced.\n");
+                exit(1);
+            }
         }
     }
     str = (char *) realloc(str, (len + 2) * sizeof(*str));
@@ -64,20 +70,20 @@ make_param_name(char *buf, int size, const char *prefix, const char *name)
 void
 error_open(char *func, const char *file)
 {
-    fprintf(stderr, "%s: Failed to open %s for reading\n", func, file);
+    fprintf(stderr, "Failed to open %s for reading\n", file);
     exit(1);
 }
 
 void
 error_undefined(const char *func, const char *param)
 {
-    fprintf(stderr, "%s: configuration parameter '%s' is undefined\n", func, param);
+    fprintf(stderr, "Configuration parameter %s is undefined\n", param);
     exit(1);
 }
 
 void
 error_invalid(const char *func, const char *param)
 {
-    fprintf(stderr, "%s: configuration parameter '%s' value is invalid\n", func, param);
+    fprintf(stderr, "Configuration parameter %s value is invalid\n", param);
     exit(1);
 }

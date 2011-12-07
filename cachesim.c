@@ -17,60 +17,6 @@ main(int argc, char *argv[])
 {
     int log_i = 0, dmp = 0, stat = 0, en_cache = 1;
     int dmp_i = 0, print_cfg = 0;
-    /*
-    int i, idx, cfg_i = 0;
-    char *params[] = {
-        "--disable-cache",
-        "-d",
-        "--dump-memory",
-        "-m",
-        "--log",
-        "-l",
-        "--statistics",
-        "-s",
-        "--dump-file",
-        "-mf",
-        "--print-config",
-        "-p",
-    };
-    for (i = 1; i < argc; i++) {
-        if ((idx = arrayidx_str(argv[i], params, 
-            sizeof(params) / sizeof(params[0]))) >= 0) {
-            switch (idx) {
-                case 0:
-                case 1:
-                    en_cache = 0;
-                    break;
-                case 2:
-                case 3:
-                    dmp = 1;
-                    break;
-                case 4:
-                case 5:
-                    log_i = ++i;
-                    break;
-                case 6:
-                case 7:
-                    stat = 1;
-                    break;
-                case 8:
-                case 9:
-                    dmp_i = ++i;
-                    break;
-                case 10:
-                case 11:
-                    print_cfg = 1;
-                default:
-                    break;
-            }
-        } else if (!cfg_i) {
-            cfg_i = i;
-        } else {
-            fprintf(stderr, "Invalid argument: %s\n", argv[i]);
-            return 1;
-        }
-    }
-    */
     int res = 0, optidx = -1;
     const char *shortopt = "dmsp";
     const struct option longopt[] = {
@@ -104,7 +50,6 @@ main(int argc, char *argv[])
     }
     ConfigFile *cfg = config_read(argv[argc - 1]);
     if (!cfg) {
-        //fprintf(stderr, "no cfg\n");
         return 1;
     }
     if (print_cfg) {
@@ -112,31 +57,32 @@ main(int argc, char *argv[])
         cfg = config_free(cfg);
         return 0;
     }
+    // создание структуры, хранящую статистику
     StatisticsInfo *info = statistics_create(cfg);
     if (!info) {
-        //fprintf(stderr, "no info\n");
         return 1;
     }
+    // создание нижележащей памяти
     AbstractMemory *mem = memory_create(cfg, "", info);
     if (!mem) {
-        //fprintf(stderr, "no mem\n");
         return 1;
     }
+    // создание структуры генератора псевдослучайных чисел
     Random *r = random_create(cfg);
     if (!r) {
-        //fprintf(stderr, "no random\n");
         return 1;
     }
+    // создание кеша (если нужно)
     AbstractMemory *cache;
     if (en_cache) {
         cache = cache_create(cfg, "", info, mem, r);
         if (!cache) {
-            //fprintf(stderr, "no cache\n");
             return 1;
         }
     } else {
         cache = mem;
     }
+    // если задан лог-файл - открываем его
     FILE *log_f = NULL;
     if (log_i > 0) {
         log_f = fopen(argv[log_i], "w");
@@ -144,48 +90,48 @@ main(int argc, char *argv[])
             fprintf(stderr, "Can't open log file.\n");
         }
     }
-    //Trace *t = trace_open("trace.trc", log_f);
+    // создаём структуру, отвечающую за трассу
     Trace *t = trace_open(NULL, log_f);
     if (!t) {
-        //fprintf(stderr, "no trace");
         return 1;
     }
     TraceStep *ts = NULL;
-    while (trace_next(t) > 0) {;
+    while (trace_next(t) > 0) {
+        // считываем строку трассы
         ts = trace_get(t);
+        // актулизируем значение кеша и памяти
         cache->ops->reveal(cache, ts->addr, ts->size, ts->value);
-        /*
-        fprintf(stderr, "%c%c %x %d %02x%02x%02x %d%d%d\n", 
-            ts->op, ts->mem, ts->addr, ts->size,
-            ts->value[0].value, ts->value[1].value, ts->value[2].value, 
-            ts->value[0].flags, ts->value[1].flags, ts->value[2].flags);*/
         if (ts->mem == 'D') {
+            // происходит обращение в данным
             if (ts->op == 'W') {
+                // запись данных
                 statistics_add_write(info);
-                //mem->ops->write(mem, ts->addr, ts->size, ts->value);
                 cache->ops->write(cache, ts->addr, ts->size, ts->value);
             } else if (ts->op == 'R') {
+                // чтение данных
                 statistics_add_read(info);
-                //mem->ops->read(mem, ts->addr, ts->size, ts->value);
                 cache->ops->read(cache, ts->addr, ts->size, ts->value);
             }
         } else if (ts->mem == 'I') {
+            // происходит обращение к инструкциям
             if (ts->op == 'W') {
+                // запись данных
                 statistics_add_write(info);
-                //mem->ops->write(mem, ts->addr, ts->size, ts->value);
                 cache->ops->write(cache, ts->addr, ts->size, ts->value);
             } else if (ts->op == 'R') {
+                // чтение данных
                 statistics_add_read(info);
-                //mem->ops->read(mem, ts->addr, ts->size, ts->value);
                 cache->ops->read(cache, ts->addr, ts->size, ts->value);
             }
         }
     }
+    // останавливаем кеш
     if (en_cache) {
         cache = cache->ops->free(cache);
     } else {
         cache = NULL;
     }
+    // вывод дампа памяти
     if (dmp) {
         FILE *dmp_f;
         if (dmp_i > 0) {
@@ -198,10 +144,11 @@ main(int argc, char *argv[])
             fclose(dmp_f);
         }
     }
+    // вывод статистики
     if (stat) {
         statistics_print(info, log_f);
     }
-    
+    // освобождение ресурсов
     t = trace_close(t);
     mem = mem->ops->free(mem);
     r = r->ops->free(r);

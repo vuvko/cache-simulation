@@ -395,7 +395,7 @@ full_cache_create(
     const char *strategy = config_get(cfg, make_param_name(buf, 
                            sizeof(buf), var_prefix, "write_strategy"));
     if (!strategy) {
-        error_undefined("full_cache_create", buf);
+        error_undefined(buf);
     } else if (!strcmp(strategy, "write-through")) {
         c->b.ops = &full_cache_wt_ops;
         c->full_ops.finalize = full_cache_wt_finalize;
@@ -404,7 +404,7 @@ full_cache_create(
         c->full_ops.finalize = full_cache_wb_finalize;
         c->b.info->write_back_needed = 1;
     } else {
-        error_invalid("full_cache_create", buf);
+        error_invalid(buf);
     }
     c->mem = mem;
     int r, i;
@@ -413,7 +413,7 @@ full_cache_create(
     const char *replace = config_get(cfg, make_param_name(buf, 
                     sizeof(buf), var_prefix, "replacement_strategy"));
     if (!replace) {
-        error_undefined("full_cache_create", buf);
+        error_undefined(buf);
     } else if (!strcmp(replace, "random")) {
         c->full_ops.link_elem = &full_cache_link_elem_rnd;
         c->full_ops.get_used = &full_cache_get_used_rnd;
@@ -423,30 +423,30 @@ full_cache_create(
         r = config_get_int(cfg, make_param_name(buf, sizeof(buf),
             var_prefix, "lfu_count_size"), &c->lfu_count_size);
         if (!r) {
-            error_undefined("full_cache_create", buf);
+            error_undefined(buf);
         } else if (r < 0 || c->lfu_count_size <= 0) {
-            error_invalid("full_cache_create", buf);
+            error_invalid(buf);
         }
         r = config_get_int(cfg, make_param_name(buf, sizeof(buf),
             var_prefix, "lfu_init_value"), &c->lfu_init_value);
         if (!r) {
-            error_undefined("full_cache_create", buf);
+            error_undefined(buf);
         } else if (r < 0 || c->lfu_init_value < 0) {
-            error_invalid("full_cache_create", buf);
+            error_invalid(buf);
         }
         r = config_get_int(cfg, make_param_name(buf, sizeof(buf),
             var_prefix, "lfu_aging_interval"), &c->lfu_aging_interval);
         if (!r) {
-            error_undefined("full_cache_create", buf);
+            error_undefined(buf);
         } else if (r < 0 || c->lfu_aging_interval <= 0) {
-            error_invalid("full_cache_create", buf);
+            error_invalid(buf);
         }
         r = config_get_int(cfg, make_param_name(buf, sizeof(buf),
             var_prefix, "lfu_aging_shift"), &c->lfu_aging_shift);
         if (!r) {
-            error_undefined("full_cache_create", buf);
+            error_undefined(buf);
         } else if (r < 0 || c->lfu_aging_shift <= 0) {
-            error_invalid("full_cache_create", buf);
+            error_invalid(buf);
         }
         
         for (i = 0; i < c->lfu_count_size; i++) {
@@ -461,35 +461,35 @@ full_cache_create(
     r = config_get_int(cfg, make_param_name(buf, sizeof(buf),
             var_prefix, "cache_size"), &c->cache_size);
     if (!r) {
-        error_undefined("full_cache_create", buf);
+        error_undefined(buf);
     } else if (r < 0 || c->cache_size > MAX_CACHE_SIZE ||
                c->cache_size <= 0) {
-        error_invalid("full_cache_create", buf);
+        error_invalid(buf);
     }
     r = config_get_int(cfg, make_param_name(buf, sizeof(buf),
             var_prefix, "block_size"), &c->block_size);
     if (!r) {
-        error_undefined("full_cache_create", buf);
+        error_undefined(buf);
     } else if (r < 0 || c->block_size > c->cache_size || 
                c->block_size <= 0 ||
                c->cache_size % c->block_size != 0) {
-        error_invalid("full_cache_create", buf);
+        error_invalid(buf);
     }
     r = config_get_int(cfg, make_param_name(buf, sizeof(buf),
             var_prefix, "cache_read_time"), &c->cache_read_time);
     if (!r) {
-        error_undefined("full_cache_create", buf);
+        error_undefined(buf);
     } else if (r < 0 || c->cache_read_time < 0 ||
                c->cache_read_time > MAX_READ_TIME) {
-        error_invalid("full_cache_create", buf);
+        error_invalid(buf);
     }
     r = config_get_int(cfg, make_param_name(buf, sizeof(buf),
             var_prefix, "cache_write_time"), &c->cache_write_time);
     if (!r) {
-        error_undefined("full_cache_create", buf);
+        error_undefined(buf);
     } else if (r < 0 || c->cache_write_time < 0 ||
                c->cache_write_time > MAX_WRITE_TIME) {
-        error_invalid("full_cache_create", buf);
+        error_invalid(buf);
     }
     c->block_count = c->cache_size / c->block_size;
     c->blocks = (FullCacheBlock *) calloc(c->block_count, 

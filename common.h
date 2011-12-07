@@ -29,7 +29,7 @@ char *make_param_name(
     int size, 
     const char *prefix, 
     const char *name);
-void error_open(char *func, const char *file);
-void error_undefined(const char *func, const char *param);
-void error_invalid(const char *func, const char *param);
+void error_open(const char *file);
+void error_undefined(const char *param);
+void error_invalid(const char *param);
 #endif

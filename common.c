@@ -3,6 +3,7 @@
 
 #include "common.h"
 
+// функция считывания строки из потока fin
 char *
 getline2(FILE *fin)
 {
@@ -35,6 +36,7 @@ getline2(FILE *fin)
     return str;
 }
 
+// поиск элемента в массиве (тип int)
 int
 inarrayd(int value, int *array, int size)
 {
@@ -47,18 +49,7 @@ inarrayd(int value, int *array, int size)
     return 0;
 }
 
-int
-arrayidx_str(char *value, char **array, int size)
-{
-    int i;
-    for (i = 0; i < size; i++) {
-        if (!strcmp(value, array[i])) {
-            return i;
-        }
-    }
-    return -1;
-}
-
+// добавление префикса к имени параметра
 char *
 make_param_name(char *buf, int size, const char *prefix, const char *name)
 {
@@ -67,22 +58,25 @@ make_param_name(char *buf, int size, const char *prefix, const char *name)
     return buf;
 }
 
+// ошибка открытия файла
 void
-error_open(char *func, const char *file)
+error_open(const char *file)
 {
     fprintf(stderr, "Failed to open %s for reading\n", file);
     exit(1);
 }
 
+// неопределённый конфигурационный параметр
 void
-error_undefined(const char *func, const char *param)
+error_undefined(const char *param)
 {
     fprintf(stderr, "Configuration parameter %s is undefined\n", param);
     exit(1);
 }
 
+// неверный конфигурационный параметр
 void
-error_invalid(const char *func, const char *param)
+error_invalid(const char *param)
 {
     fprintf(stderr, "Configuration parameter %s value is invalid\n", param);
     exit(1);

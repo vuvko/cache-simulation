@@ -30,7 +30,7 @@ trace_open(const char *path, FILE *log_f)
         t->f = fopen(path, "r");
     }
     if (!t->f) {
-        error_open("trace_open", path);
+        error_open(path);
         t = trace_close(t);
     }
     return t;

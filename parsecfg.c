@@ -9,15 +9,15 @@
 
 typedef struct ConfigEntry
 {
-    char *name;
-    char *value;
+    char *name; // имя параметра
+    char *value; // значение параматера
 } ConfigEntry;
 
 struct ConfigFile
 {
-    ConfigEntry *v;
-    int used;
-    int alc;
+    ConfigEntry *v; // массив параметров
+    int used; // количество элементов в массиве параметров
+    int alc; // количество блоков, выделенных под массив параметров
 };
 
 int 
@@ -63,8 +63,7 @@ config_read(const char *path)
     ConfigFile *cfg = NULL;
     char *k = NULL, *v = NULL, *str = NULL;
     if (!(in = fopen(path, "r"))) {
-        //fprintf(stderr, "Unable to open config file\n");
-        error_open("config_read", path);
+        error_open(path);
         goto fail;
     }
     cfg = (ConfigFile *) calloc(1, sizeof(*cfg));
@@ -95,16 +94,12 @@ config_read(const char *path)
         }
         v = k;
         if (!isalpha(*v) && *v != '_') {
-            //fprintf(stderr, "Error while parsing config file1\n");
-            //error_invalid_chr(path, line, *v);
             parse_error(path, line);
             goto fail;
         }
         for (; isalpha(*v) || isdigit(*v) || 
                *v == '_' || *v == '-'; v++){}
         if (!isspace(*v) && *v != '=') {
-            //fprintf(stderr, "Error while parsing config file2\n");
-            //error_invalid_chr(path, line, *v);
             parse_error(path, line);
             goto fail;
         }
@@ -113,8 +108,6 @@ config_read(const char *path)
             v++;
             for (; isspace(*v); v++){}
             if (*v != '=') {
-                //fprintf(stderr, "Error while parsing config file3\n");
-                //error_undefined(func_name, k);
                 parse_error(path, line);
                 goto fail;
             }
@@ -123,13 +116,6 @@ config_read(const char *path)
         }
         v++;
         for (; isspace(*v); v++){}
-        /*
-        if (*v == '\0') {
-            //fprintf(stderr, "Error while parsing config file4\n");
-            //error_undefined(func_name, k);
-            parse_error(path, line);
-            goto fail;
-        }*/
         char *cur = v;
         for (; *cur != '\n' && *cur != '\0'; cur++){}
         *cur = '\0';

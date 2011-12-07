@@ -206,7 +206,7 @@ direct_cache_create(
     const char *strategy = config_get(cfg, make_param_name(buf, 
                            sizeof(buf), var_prefix, "write_strategy"));
     if (!strategy) {
-        error_undefined("direct_cache_create", buf);
+        error_undefined(buf);
     } else if (!strcmp(strategy, "write-through")) {
         c->b.ops = &direct_cache_wt_ops;
         c->direct_ops.finalize = direct_cache_wt_finalize;
@@ -215,42 +215,42 @@ direct_cache_create(
         c->direct_ops.finalize = direct_cache_wb_finalize;
         c->b.info->write_back_needed = 1;
     } else {
-        error_invalid("direct_cache_create", buf);
+        error_invalid(buf);
     }
     c->mem = mem;
     
     int r = config_get_int(cfg, make_param_name(buf, sizeof(buf),
             var_prefix, "cache_size"), &c->cache_size);
     if (!r) {
-        error_undefined("direct_cache_create", buf);
+        error_undefined(buf);
     } else if (r < 0 || c->cache_size > MAX_CACHE_SIZE ||
                c->cache_size <= 0) {
-        error_invalid("direct_cache_create", buf);
+        error_invalid(buf);
     }
     r = config_get_int(cfg, make_param_name(buf, sizeof(buf),
             var_prefix, "block_size"), &c->block_size);
     if (!r) {
-        error_undefined("direct_cache_create", buf);
+        error_undefined(buf);
     } else if (r < 0 || c->block_size > c->cache_size || 
                c->block_size <= 0 ||
                c->cache_size % c->block_size != 0) {
-        error_invalid("direct_cache_create", buf);
+        error_invalid(buf);
     }
     r = config_get_int(cfg, make_param_name(buf, sizeof(buf),
             var_prefix, "cache_read_time"), &c->cache_read_time);
     if (!r) {
-        error_undefined("direct_cache_create", buf);
+        error_undefined(buf);
     } else if (r < 0 || c->cache_read_time < 0 ||
                c->cache_read_time > MAX_READ_TIME) {
-        error_invalid("direct_cache_create", buf);
+        error_invalid(buf);
     }
     r = config_get_int(cfg, make_param_name(buf, sizeof(buf),
             var_prefix, "cache_write_time"), &c->cache_write_time);
     if (!r) {
-        error_undefined("direct_cache_create", buf);
+        error_undefined(buf);
     } else if (r < 0 || c->cache_write_time < 0 ||
                c->cache_write_time > MAX_WRITE_TIME) {
-        error_invalid("direct_cache_create", buf);
+        error_invalid(buf);
     }
     c->block_count = c->cache_size / c->block_size;
     c->blocks = (DirectCacheBlock *) calloc(c->block_count, 

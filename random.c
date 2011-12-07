@@ -40,7 +40,7 @@ random_create(ConfigFile *cfg)
     if (!err) {
         rnd->seed = time(NULL);
     } else if (err < 0 || rnd->seed < 0) {
-        error_invalid("random_create", "seed");
+        error_invalid("seed");
         return NULL;
     }
     

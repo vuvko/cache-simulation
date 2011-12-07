@@ -105,35 +105,35 @@ memory_create(
     r = config_get_int(cfg, make_param_name(buf, sizeof(buf), 
                        var_prefix, "memory_size"), &m->memory_size);
     if (!r) {
-        error_undefined("memory_create", buf);
+        error_undefined(buf);
     } else if (r < 0 || m->memory_size <= 0 || 
                m->memory_size > MAX_MEM_SIZE || 
                m->memory_size % KiB != 0) {
-        error_invalid("memory_create", buf);
+        error_invalid(buf);
     }
     r = config_get_int(cfg, make_param_name(buf, sizeof(buf), 
             var_prefix, "memory_read_time"), &m->memory_read_time);
     if (!r) {
-        error_undefined("memory_create", buf);
+        error_undefined(buf);
     } else if (r < 0 || m->memory_read_time < 0 || 
                m->memory_read_time > MAX_READ_TIME) {
-        error_invalid("memory_create", buf);
+        error_invalid(buf);
     }
     r = config_get_int(cfg, make_param_name(buf, sizeof(buf), 
             var_prefix, "memory_write_time"), &m->memory_write_time);
     if (!r) {
-        error_undefined("memory_create", buf);
+        error_undefined(buf);
     } else if (r < 0 || m->memory_write_time < 0 || 
                m->memory_write_time > MAX_WRITE_TIME) {
-        error_invalid("memory_create", buf);
+        error_invalid(buf);
     }
     r = config_get_int(cfg, make_param_name(buf, sizeof(buf), 
                        var_prefix, "memory_width"), &m->memory_width);
     if (!r) {
-        error_undefined("memory_create", buf);
+        error_undefined(buf);
     } else if (r < 0 || m->memory_width <= 0 || 
                m->memory_width > MAX_WIDTH) {
-        error_invalid("memory_create", buf);
+        error_invalid(buf);
     }
 
     m->mem = (MemoryCell *) calloc(m->memory_size, sizeof(m->mem[0]));
